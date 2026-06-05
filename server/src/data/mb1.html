@@ -3,111 +3,55 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>2035 员工生日邀请函</title>
+<title>生日邀请函</title>
 <style>
+    /* --- 样式部分保持不变 --- */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body, html { width: 100%; height: 100%; overflow: hidden; font-family: "Songti SC", "SimSun", serif; background-color: #f4f4f4; touch-action: none; }
-
-    #fireworksCanvas {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        z-index: 1; pointer-events: none;
-    }
-
-    .swiper-container {
-        width: 100%; height: 100%; position: relative;
-        display: flex; 
-        flex-direction: column; /* 修改1: 改为垂直排列 */
-        transition: transform 0.6s ease-in-out;
-        z-index: 10;
-    }
-    .page {
-        min-height: 100vh; /* 修改2: 改为 min-height */
-        width: 100%;
-        position: relative;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        overflow: hidden; color: #9c7b56;
-    }
-
-    /* 浅色渐变背景 */
-    .bg-layer {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
-        background: radial-gradient(circle at 50% 60%, rgba(255, 253, 245, 0.95) 0%, rgba(253, 251, 240, 0.9) 40%, rgba(234, 221, 207, 0.9) 100%);
-    }
-
+    #fireworksCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+    .swiper-container { width: 100%; height: 100%; position: relative; display: flex; flex-direction: column; transition: transform 0.6s ease-in-out; z-index: 10; }
+    .page { min-height: 100vh; width: 100%; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; color: #9c7b56; }
+    .bg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: radial-gradient(circle at 50% 60%, rgba(255, 253, 245, 0.95) 0%, rgba(253, 251, 240, 0.9) 40%, rgba(234, 221, 207, 0.9) 100%); }
     .page-1 .content { z-index: 10; text-align: center; margin-top: -50px; }
     .main-title-en { font-size: 3rem; font-weight: bold; line-height: 1; letter-spacing: 2px; font-family: "Times New Roman", serif; color: #a88b65; }
     .sub-title-cn { font-size: 1.8rem; margin-top: 10px; font-weight: normal; }
     .date-text { font-size: 1rem; margin-top: 15px; color: #888; font-family: sans-serif; }
-
-    .bottom-wish {
-        position: absolute; bottom: 15%; width: 100%; text-align: center; z-index: 10;
-    }
+    .bottom-wish { position: absolute; bottom: 15%; width: 100%; text-align: center; z-index: 10; }
     .year-big { font-size: 4rem; font-weight: bold; color: #a88b65; line-height: 1; margin-bottom: 5px; font-family: sans-serif; }
     .wish-sub { font-size: 0.8rem; letter-spacing: 1px; margin-bottom: 15px; color: #666; font-family: sans-serif; text-transform: uppercase;}
     .poem { font-size: 1.1rem; line-height: 1.8; color: #9c7b56; }
-
-    .card-wrapper {
-        z-index: 10; width: 85%; max-width: 400px;
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(5px);
-        padding: 40px 25px;
-        box-shadow: 0 10px 30px rgba(168, 139, 101, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.9);
-        text-align: center;
-        display: flex; flex-direction: column; align-items: center;
-    }
+    .card-wrapper { z-index: 10; width: 85%; max-width: 400px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(5px); padding: 40px 25px; box-shadow: 0 10px 30px rgba(168, 139, 101, 0.15); border: 1px solid rgba(255, 255, 255, 0.9); text-align: center; display: flex; flex-direction: column; align-items: center; }
     .card-header { margin-bottom: 20px; border-bottom: 1px dashed #d4af37; padding-bottom: 15px; width: 100%; }
     .nickname { font-size: 1.2rem; color: #a88b65; margin-bottom: 20px; font-weight: bold; }
-
     .card-body { text-align: left; font-size: 0.95rem; line-height: 1.8; color: #555; margin-bottom: 20px; text-indent: 2em; }
     .card-footer { border-top: 1px dashed #d4af37; padding-top: 15px; width: 100%; }
     .footer-wish { font-size: 0.9rem; color: #a88b65; font-weight: bold; margin-bottom: 5px; }
     .footer-poem { font-size: 0.8rem; color: #888; }
-
-    .arrow-up {
-        position: absolute; bottom: 20px; left: 50%;
-        width: 24px; height: 24px; border-top: 2px solid #ccc; border-left: 2px solid #ccc;
-        transform: translateX(-50%) rotate(45deg); animation: bounce 2s infinite; z-index: 20; cursor: pointer;
-    }
-    @keyframes bounce {
-        0%, 100% { transform: translateX(-50%) rotate(45deg) translateY(0); }
-        50% { transform: translateX(-50%) rotate(45deg) translateY(-10px); }
-    }
-
-    .music-icon {
-        position: absolute; top: 20px; right: 20px; width: 30px; height: 30px;
-        background: rgba(0,0,0,0.1); border-radius: 50%; z-index: 20;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .music-icon::after {
-        content: '♪'; color: #a88b65; font-size: 18px;
-    }
+    .arrow-up { position: absolute; bottom: 20px; left: 50%; width: 24px; height: 24px; border-top: 2px solid #ccc; border-left: 2px solid #ccc; transform: translateX(-50%) rotate(45deg); animation: bounce 2s infinite; z-index: 20; cursor: pointer; }
+    @keyframes bounce { 0%, 100% { transform: translateX(-50%) rotate(45deg) translateY(0); } 50% { transform: translateX(-50%) rotate(45deg) translateY(-10px); } }
+    .music-icon { position: absolute; top: 20px; right: 20px; width: 30px; height: 30px; background: rgba(0,0,0,0.1); border-radius: 50%; z-index: 20; display: flex; align-items: center; justify-content: center; }
+    .music-icon::after { content: '♪'; color: #a88b65; font-size: 18px; }
 </style>
 </head>
 <body>
-
 <canvas id="fireworksCanvas"></canvas>
-
 <div class="swiper-container" id="swiper">
     <!-- 第一页：封面 -->
     <div class="page page-1">
         <div class="bg-layer"></div>
         <div class="music-icon"></div>
-
         <div class="content">
             <div class="main-title-en">HAPPY<br>BIRTHDAY</div>
             <div class="sub-title-cn">（生日快乐）</div>
-            <div class="date-text" id="coverDate">2035.5.20</div>
+            <!-- 日期占位符 -->
+            <div class="date-text" id="coverDate">{{date}}</div>
         </div>
-
         <div class="bottom-wish">
             <div class="year-big">2035</div>
             <div class="wish-sub">BEST WISHES FOR YOU</div>
             <div class="poem">年年有今日 · 岁岁有今朝</div>
             <div class="poem" style="font-size: 0.9rem; margin-top: 5px;">祝你一年比一年自由 一岁比一岁通透</div>
         </div>
-
-        <!-- 修改3: 点击箭头改为 translateY -->
         <div class="arrow-up" style="transform: translateX(-50%) rotate(-45deg);" onclick="nextPage()"></div>
     </div>
 
@@ -115,126 +59,83 @@
     <div class="page page-2">
         <div class="bg-layer"></div>
         <div class="music-icon"></div>
-
         <div class="card-wrapper">
             <div class="card-header">
                 <div class="main-title-en" style="font-size: 2rem;">HAPPY<br>BIRTHDAY</div>
                 <div class="sub-title-cn" style="font-size: 1.2rem;">（诚挚邀请）</div>
             </div>
-
-            <div class="nickname" id="userName">显示姓名</div>
-
-            <div class="card-body" id="blessingText"></div>
-
+            <!-- 姓名占位符 -->
+            <div class="nickname" id="userName">{{name}}</div>
+            <!-- 祝福语占位符 -->
+            <div class="card-body" id="blessingText">{{blessing}}</div>
             <div class="card-footer">
                 <div class="footer-wish">BEST WISHES FOR YOU</div>
                 <div class="footer-poem">年年有今日 · 岁岁有今朝</div>
             </div>
         </div>
-
-        <!-- 修改4: 返回箭头改为 translateY -->
         <div class="arrow-up" onclick="prevPage()" style="transform: translateX(-50%) rotate(135deg); animation: none;"></div>
     </div>
 </div>
 
 <script>
-    // --- 动态数据配置区 ---
+    // --- 动态数据配置区 (占位符) ---
+    // 注意：实际使用时，这些值通常由后端渲染或通过URL参数传入
     const inviteData = {
-        coverDate: "2035.5.20",
-        userName: "张三",
-        blessingText: "生辰至，喜乐临！<br>愿你的世界永远充满阳光与鲜花，愿你的未来如星河般璀璨。<br>在这特别的日子里，愿你被岁月温柔以待，<br>所得皆所期，所失亦无碍。<br>生日快乐，不止今日，而是朝朝暮暮！"
+        coverDate: "{{date}}", 
+        userName: "{{name}}", 
+        blessingText: "{{blessing}}"
     };
 
-    document.getElementById('coverDate').textContent = inviteData.coverDate;
-    document.getElementById('userName').textContent = inviteData.userName;
-    document.getElementById('blessingText').innerHTML = inviteData.blessingText;
+    // 页面加载时填充数据
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('coverDate').textContent = inviteData.coverDate;
+        document.getElementById('userName').textContent = inviteData.userName;
+        document.getElementById('blessingText').innerHTML = inviteData.blessingText;
+    });
 
     // --- 翻页逻辑 ---
     let currentPage = 0;
     const totalPages = 2;
     const swiper = document.getElementById('swiper');
+    function nextPage() { if (currentPage < totalPages - 1) { currentPage++; updateSlide(); } }
+    function prevPage() { if (currentPage > 0) { currentPage--; updateSlide(); } }
+    function updateSlide() { swiper.style.transform = `translateY(-${currentPage * 100}vh)`; }
 
-    function nextPage() {
-        if (currentPage < totalPages - 1) {
-            currentPage++;
-            updateSlide();
-        }
-    }
-
-    function prevPage() {
-        if (currentPage > 0) {
-            currentPage--;
-            updateSlide();
-        }
-    }
-
-    function updateSlide() {
-        // 修改5: 改为 translateY
-        swiper.style.transform = `translateY(-${currentPage * 100}vh)`;
-    }
-
-    // --- 修改6: 触摸滑动逻辑 (上下) ---
+    // --- 触摸滑动逻辑 ---
     let touchStartY = 0;
-    document.addEventListener('touchstart', e => { 
-        touchStartY = e.touches[0].clientY; 
-    }, { passive: false });
-
+    document.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: false });
     document.addEventListener('touchend', e => {
         let touchEndY = e.changedTouches[0].clientY;
         let diff = touchStartY - touchEndY;
-        
-        // 向上滑动 (页面向上走，露出下面的内容) -> 下一页
-        if (diff > 50) {
-            nextPage();
-        } 
-        // 向下滑动 (页面向下走，露出上面的内容) -> 上一页
-        else if (diff < -50) {
-            prevPage();
-        }
+        if (diff > 50) { nextPage(); }
+        else if (diff < -50) { prevPage(); }
     });
 
-    // --- 修改7: 鼠标滚轮支持 ---
+    // --- 鼠标滚轮支持 ---
     document.addEventListener('wheel', e => {
         e.preventDefault();
-        
-        if (e.deltaY > 0) {
-            // 向下滚动 -> 下一页
-            nextPage();
-        } else {
-            // 向上滚动 -> 上一页
-            prevPage();
-        }
+        if (e.deltaY > 0) { nextPage(); } else { prevPage(); }
     }, { passive: false });
 
-    // --- 浅色背景烟花特效 (已修复) ---
+    // --- 烟花特效 ---
     const canvas = document.getElementById('fireworksCanvas');
     const ctx = canvas.getContext('2d');
-    
-    function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resize);
-    resize();
-
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize); resize();
     let particles = [];
-    const baseHue = 30; // 深金色/琥珀色
-
+    const baseHue = 30;
     function random(min, max) { return Math.random() * (max - min) + min; }
-
     class Particle {
         constructor(x, y) {
-            this.x = x; 
-            this.y = y;
-            this.coordinates = [];
-            for(let i=0; i<5; i++) this.coordinates.push([this.x, this.y]);
+            this.x = x; this.y = y;
+            this.coordinates = []; for(let i=0; i<5; i++) this.coordinates.push([this.x, this.y]);
             this.angle = random(0, Math.PI * 2);
             this.speed = random(1, 7);
             this.friction = 0.92;
             this.gravity = 1.2;
-            this.hue = random(baseHue - 5, baseHue + 10); 
+            this.hue = random(baseHue - 5, baseHue + 10);
             this.saturation = 100;
-            this.lightness = random(30, 55); // 保持较深的颜色，防止在浅色背景上看不见
+            this.lightness = random(30, 55);
             this.alpha = 1;
             this.decay = random(0.01, 0.02);
         }
@@ -256,40 +157,24 @@
             ctx.stroke();
         }
     }
-
     function createExplosion() {
         const x = random(50, canvas.width - 50);
         const y = random(50, canvas.height / 1.5);
         const count = 100;
-        for(let i=0; i<count; i++) {
-            particles.push(new Particle(x, y));
-        }
+        for(let i=0; i<count; i++) { particles.push(new Particle(x, y)); }
     }
-
     function loop() {
         requestAnimationFrame(loop);
-        
-        // 拖尾效果
         ctx.globalCompositeOperation = 'destination-out';
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; 
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // 关键修复：浅色背景必须用 source-over，否则烟花会变白消失
         ctx.globalCompositeOperation = 'source-over';
-
-        if(random(0, 1) < 0.06) { 
-            createExplosion();
-        }
-
+        if(random(0, 1) < 0.06) { createExplosion(); }
         let j = particles.length;
-        while(j--) { 
-            particles[j].draw(); 
-            particles[j].update(j); 
-        }
+        while(j--) { particles[j].draw(); particles[j].update(j); }
     }
-
     loop();
 </script>
-
 </body>
+</html>
 </html>
