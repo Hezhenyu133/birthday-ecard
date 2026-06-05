@@ -100,8 +100,8 @@
           <!-- 错误详情 -->
           <div v-if="importResult.errors && importResult.errors.length > 0" class="error-details">
             <h4>失败详情</h4>
-            <el-table :data="importResult.errors" border size="small">
-              <el-table-column type="index" label="序号" width="60" />
+            <el-table :data="importResult.errors.map((msg, i) => ({ index: i + 1, message: msg }))" border size="small">
+              <el-table-column prop="index" label="序号" width="60" />
               <el-table-column prop="message" label="错误信息" />
             </el-table>
           </div>
@@ -205,18 +205,33 @@ const handleImport = async () => {
 
   importing.value = true
   try {
-    importResult.value = await importEmployees(selectedFile.value)
+    const result = await importEmployees(selectedFile.value)
     
-    if (importResult.value.success > 0) {
-      ElMessage.success(`成功导入 ${importResult.value.success} 条数据`)
+    // 拦截器对成功响应已解包（返回 data），对400验证错误返回完整响应体
+    if (result?.code === 400 && result?.data?.errors) {
+      // 数据验证失败
+      const { message, data } = result
+      importResult.value = {
+        success: data.valid || 0,
+        failed: data.errors.length,
+        errors: data.errors.map((e: any) => typeof e === 'string' ? e : `第${e.row}行: ${e.reason}`)
+      }
+      ElMessage.error(message || '部分数据验证失败')
+    } else if (result?.imported !== undefined || result?.code === 200) {
+      // 导入成功（拦截器已解包，result 就是 data）
+      const imported = result.imported ?? result.data?.imported ?? 0
+      importResult.value = {
+        success: imported,
+        failed: 0,
+        errors: []
+      }
+      ElMessage.success(`成功导入 ${imported} 条数据`)
+    } else {
+      ElMessage.error('导入失败，请检查文件格式')
     }
-    
-    if (importResult.value.failed > 0) {
-      ElMessage.warning(`${importResult.value.failed} 条数据导入失败，请查看失败详情`)
-    }
-  } catch (error) {
+  } catch (error: any) {
     console.error('导入失败：', error)
-    ElMessage.error('导入失败，请检查文件格式或联系管理员')
+    ElMessage.error('网络错误或服务器异常，请稍后重试')
   } finally {
     importing.value = false
   }

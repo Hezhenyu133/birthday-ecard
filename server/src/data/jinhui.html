@@ -245,24 +245,28 @@
     .scroll-hint{
       position:absolute;
       left:50%;
-      bottom:12px;
+      bottom:16px;
       translate:-50% 0;
-      font-size:12px;
-      color:rgba(27,58,42,.72);
-      letter-spacing:.18em;
-      text-transform:uppercase;
       z-index:3;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:2px;
       animation:hintBounce 1.7s ease-in-out infinite;
       user-select:none;
     }
+    .scroll-hint::before,
     .scroll-hint::after{
       content:"";
       display:block;
-      width:1px;
-      height:18px;
-      background:linear-gradient(180deg, transparent, rgba(27,58,42,.55), transparent);
-      margin:6px auto 0;
+      width:14px;
+      height:14px;
+      border-right:2.5px solid rgba(27,58,42,.5);
+      border-bottom:2.5px solid rgba(27,58,42,.5);
+      transform:rotate(45deg);
     }
+    .scroll-hint::before{opacity:.35}
+    .scroll-hint::after{opacity:.7}
 
     .page-two{
       display:flex;
@@ -286,7 +290,6 @@
     }
     .poster{
       width:min(436px, 100%);
-      min-height:min(86vh, 760px);
       background:linear-gradient(180deg, rgba(255,254,248,.96), rgba(255,248,225,.93));
       border:10px solid rgba(255,213,79,.55);
       box-shadow:var(--shadow);
@@ -382,10 +385,10 @@
       display:inline-flex;
       align-items:flex-end;
       justify-content:center;
-      width:34px;
+      width:clamp(26px, 8vw, 34px);
       height:58px;
       font-family:Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
-      font-size:32px;
+      font-size:clamp(24px, 7vw, 32px);
       line-height:1;
       color:#fffcf0;
       text-shadow:
@@ -474,16 +477,17 @@
     }
     .name{
       color:var(--yellow);
-      font-size:13px;
-      letter-spacing:.05em;
+      font-size:16px;
+      font-weight:600;
+      letter-spacing:.08em;
       margin:0;
     }
     .message{
       margin:0;
       color:var(--amber);
       text-align:center;
-      line-height:1.75;
-      font-size:13px;
+      line-height:1.8;
+      font-size:15px;
       padding:0 8px;
       white-space:pre-wrap;
       text-shadow:0 1px 0 rgba(255,255,255,.35);
@@ -492,12 +496,12 @@
     .footer{
       width:100%;
       text-align:center;
-      color:var(--green);
+      color:var(--amber);
       font-family: Georgia, "Times New Roman", serif;
       font-style:italic;
       font-size:14px;
       padding-top:4px;
-      border-top:1px solid rgba(129,199,132,.75);
+      border-top:1px solid rgba(255,213,79,.75);
       margin-top:6px;
       letter-spacing:.04em;
     }
@@ -611,8 +615,9 @@
       .title .desc{font-size:12px}
       .poster{border-width:8px; padding-inline:12px}
       .topline{font-size:12px}
-      .candle-letter{width:30px;height:54px;font-size:28px}
-      .message{font-size:12px;line-height:1.7}
+      .candle-letter{width:clamp(24px, 7.5vw, 30px);height:50px;font-size:clamp(22px, 6.5vw, 28px)}
+      .message{font-size:14px;line-height:1.75}
+      .name{font-size:15px}
     }
     @media (prefers-reduced-motion: reduce){
       *,*::before,*::after{animation:none !important; transition:none !important; scroll-behavior:auto !important}
@@ -761,7 +766,7 @@
         </div>
       </div>
 
-      <div class="scroll-hint">继续下滑</div>
+      <div class="scroll-hint" aria-label="向下滑动"></div>
       <div class="ornaments" id="ornaments-1" aria-hidden="true"></div>
     </section>
 

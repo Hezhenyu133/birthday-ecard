@@ -1,4 +1,5 @@
 import request from './request'
+import type { PageResponse } from './types'
 
 // 发送记录接口
 export interface SendRecord {
@@ -29,14 +30,6 @@ export interface RecordQueryParams {
   status?: 'pending' | 'success' | 'failed'
   startDate?: string
   endDate?: string
-}
-
-// 分页响应
-export interface PageResponse<T> {
-  list: T[]
-  total: number
-  page: number
-  pageSize: number
 }
 
 // 获取发送记录列表（分页）

@@ -1,5 +1,5 @@
 // 初始化默认管理员
-import { sequelize, Admin } from '../models/index.js';
+import { Admin } from '../models/index.js';
 import { hashPassword } from './password.js';
 
 const initDefaultAdmin = async () => {

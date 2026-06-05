@@ -1,4 +1,5 @@
 import request from './request'
+import type { PageResponse } from './types'
 
 // 员工信息接口
 export interface Employee {
@@ -22,14 +23,6 @@ export interface EmployeeQueryParams {
   keyword?: string
   department?: string
   is_active?: number
-}
-
-// 分页响应
-export interface PageResponse<T> {
-  list: T[]
-  total: number
-  page: number
-  pageSize: number
 }
 
 // 获取员工列表（分页）
@@ -57,12 +50,10 @@ export const deleteEmployee = (id: number) => {
   return request.delete(`/employees/${id}`)
 }
 
-// Excel批量导入
-export const importEmployees = (file: File): Promise<{ success: number; failed: number; errors: string[] }> => {
+// Excel批量导入（400验证错误已在拦截器中特殊处理，透传给调用方）
+export const importEmployees = async (file: File) => {
   const formData = new FormData()
   formData.append('file', file)
-  
-  // 不要手动设置 Content-Type，让浏览器自动添加 boundary 参数
   return request.post('/employees/import', formData)
 }
 

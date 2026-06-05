@@ -3,9 +3,7 @@ import cron from 'node-cron';
 import { Op } from 'sequelize';
 import { sequelize } from '../config/database.js';
 import { Employee, SendRecord } from '../models/index.js';
-import { matchTemplate } from './templateMatcher.js';
-import { generateCard } from './cardGenerator.js';
-import { sendSMS } from './smsService.js';
+import { sendBirthdayCard } from './sendService.js';
 
 /**
  * 启动生日定时任务
@@ -29,10 +27,10 @@ export const startBirthdayScheduler = () => {
 };
 
 /**
- * 处理今日生日员工（独立函数，便于复用和测试）
+ * 处理今日生日员工
  * 
- * 流程：匹配模板 -> 生成贺卡 -> 创建待发送记录 -> 发送短信 -> 更新记录状态
- * 先创建 pending 记录再发送短信，确保即使进程崩溃也有记录可查
+ * 流程：查询今日生日员工 -> 逐个调用共享发送服务
+ * 发送服务内部会完成：匹配模板 → 生成贺卡 → 创建记录 → 发送短信 → 更新状态
  */
 export const processBirthdayEmployees = async () => {
   const today = new Date();
@@ -52,74 +50,22 @@ export const processBirthdayEmployees = async () => {
 
   console.log(`[定时任务] 找到 ${birthdayEmployees.length} 位今日生日员工`);
 
-  // 2. 查询今天已成功发送的员工ID集合（防重复发送）
-  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-
-  const alreadySent = await SendRecord.findAll({
-    where: {
-      send_status: 'success',
-      send_time: { [Op.gte]: todayStart, [Op.lt]: todayEnd }
-    },
-    attributes: ['employee_id']
-  });
-  const sentEmployeeIds = new Set(alreadySent.map(r => r.employee_id));
-
-  // 3. 逐个处理
+  // 2. 逐个处理（共享发送函数内部已包含重复发送检查）
   for (const employee of birthdayEmployees) {
-    if (sentEmployeeIds.has(employee.id)) {
-      console.log(`[定时任务] 员工 ${employee.name} 今日已发送，跳过`);
-      continue;
-    }
-
-    let record = null;
     try {
-      // 3.1 匹配模板
-      const template = await matchTemplate(employee);
-      if (!template) {
-        throw new Error('无可用模板');
+      const result = await sendBirthdayCard({ employeeId: employee.id, skipIfSentToday: true });
+
+      if (result.error === '今日已发送，跳过') {
+        console.log(`[定时任务] 员工 ${employee.name} 今日已发送，跳过`);
+        continue;
       }
-      
-      // 3.2 生成贺卡
-      const cardResult = await generateCard(template, employee);
 
-      // 3.3 创建待发送记录（先建记录再发短信，保证崩溃时也有据可查）
-      record = await SendRecord.create({
-        employee_id: employee.id,
-        template_id: template.id,
-        card_url: cardResult.cardUrl,
-        card_id: cardResult.cardId,
-        send_status: 'pending',
-        send_time: new Date()
-      });
-
-      // 3.4 发送短信/彩信
-      const smsResult = await sendSMS(employee.phone, cardResult.cardUrl, employee.name);
-
-      // 3.5 根据短信发送结果更新记录状态
-      await record.update({
-        send_status: smsResult.success ? 'success' : 'failed',
-        message_id: smsResult.messageId,
-        sms_provider: smsResult.provider,
-        retry_count: smsResult.retryCount,
-        error_message: smsResult.error || null,
-        send_time: new Date()
-      });
-
-      if (smsResult.success) {
-        console.log(`[定时任务] 已为员工 ${employee.name} 生成贺卡并发送短信 (${smsResult.provider})`);
+      if (result.success) {
+        console.log(`[定时任务] 已为员工 ${employee.name} 生成贺卡并发送短信 (${result.smsProvider})`);
       } else {
-        console.warn(`[定时任务] 员工 ${employee.name} 贺卡已生成但短信发送失败: ${smsResult.error}`);
+        console.warn(`[定时任务] 员工 ${employee.name} 发送失败: ${result.error}`);
       }
-
     } catch (err) {
-      // 更新已有的 pending 记录为失败状态
-      if (record) {
-        await record.update({
-          send_status: 'failed',
-          error_message: err.message
-        }).catch(updateErr => console.error('[定时任务] 更新失败记录出错:', updateErr.message));
-      }
       console.error(`[定时任务] 处理员工 ${employee.name} 失败:`, err.message);
     }
   }

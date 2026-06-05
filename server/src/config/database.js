@@ -1,10 +1,13 @@
-import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-// 确保环境变量被加载（如果此文件被单独导入）
-if (!process.env.DB_HOST) {
-  dotenv.config();
-}
+// ES 模块中 import 先于模块体执行，必须在此处提前加载 .env
+const __dbFile = fileURLToPath(import.meta.url);
+const __dbDir = path.dirname(__dbFile);
+dotenv.config({ path: path.join(__dbDir, '../../.env') });
+
+import { Sequelize } from 'sequelize';
 
 export const sequelize = new Sequelize(
   process.env.DB_NAME,

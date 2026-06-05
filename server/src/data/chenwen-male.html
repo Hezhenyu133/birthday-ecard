@@ -60,10 +60,16 @@
     .sender-name{font-size:17px;font-weight:500;color:var(--primary);letter-spacing:1px}
     .scroll-tip{
       position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
-      font-size:12px;color:var(--text-light);letter-spacing:2px;
-      display:flex;flex-direction:column;align-items:center;gap:6px;opacity:0.6;
+      display:flex;flex-direction:column;align-items:center;gap:3px;opacity:0.7;
+      animation:bounce 1.5s ease-in-out infinite;
     }
-    .scroll-tip::after{content:"↓";font-size:16px;animation:bounce 1.5s infinite}
+    .scroll-tip::before,.scroll-tip::after{
+      content:"";display:block;width:12px;height:12px;
+      border-right:2.5px solid var(--text-light);border-bottom:2.5px solid var(--text-light);
+      transform:rotate(45deg);
+    }
+    .scroll-tip::before{opacity:.4}
+    .scroll-tip::after{opacity:.8}
     .page-two{background:linear-gradient(180deg,var(--bg2) 0%,var(--bg1) 100%)}
     .card-container{
       width:100%;max-width:400px;background:var(--card-bg);
@@ -92,7 +98,7 @@
     .deco-line.bottom-left{bottom:20px;left:20px}
     .deco-line.bottom-right{bottom:20px;right:20px}
     @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-    @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+    @keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(5px)}}
     @media(max-width:400px){.page{padding:32px 20px}.card-container{padding:36px 24px}.recipient{letter-spacing:6px}}
     @media(prefers-reduced-motion:reduce){*{animation:none!important}}
   </style>
@@ -114,7 +120,7 @@
       <div class="sender-label">来自</div>
       <div class="sender-name">{{sender}}</div>
     </div>
-    <div class="scroll-tip">向下查看祝福</div>
+    <div class="scroll-tip" aria-label="向下滑动"></div>
   </section>
   <section class="page page-two">
     <div class="card-container">

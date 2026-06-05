@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { success, error } from '../utils/response.js';
 import { authMiddleware } from '../middlewares/auth.js';
-import { Template, Blessing } from '../models/index.js';
+import { Template, Blessing, Employee } from '../models/index.js';
 
 const router = Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -93,13 +93,21 @@ router.put('/:id', async (req, res) => {
 // DELETE /api/templates/:id - 删除模板
 router.delete('/:id', async (req, res) => {
   try {
+    // 检查是否有员工引用此模板
+    const refCount = await Employee.count({ where: { default_template_id: req.params.id } });
+    if (refCount > 0) {
+      // 解除员工关联而不是阻止删除
+      await Employee.update({ default_template_id: null }, { where: { default_template_id: req.params.id } });
+      console.log(`[模板] 已解除 ${refCount} 位员工的默认模板关联`);
+    }
+
     const deleted = await Template.destroy({ where: { id: req.params.id } });
     
     if (!deleted) {
       return error(res, '模板不存在', 404);
     }
 
-    success(res, null, '删除成功');
+    success(res, null, refCount > 0 ? `删除成功，已解除 ${refCount} 位员工的关联` : '删除成功');
   } catch (err) {
     error(res, err.message);
   }

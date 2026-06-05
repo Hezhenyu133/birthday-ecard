@@ -5,10 +5,8 @@ import { useUserStore } from '@/stores/user'
 // 创建axios实例
 const request: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  timeout: 10000
+  // 不设置默认 Content-Type，让 axios 根据请求体自动判断
 })
 
 // 请求拦截器
@@ -53,6 +51,11 @@ request.interceptors.response.use(
     // 处理HTTP错误
     if (error.response) {
       const { status, data } = error.response
+
+      // 400 且包含验证错误详情时，不弹全局提示，将数据透传给调用方处理
+      if (status === 400 && data?.data?.errors) {
+        return Promise.resolve(data)
+      }
       
       switch (status) {
         case 401:

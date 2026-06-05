@@ -1,9 +1,4 @@
-import dotenv from 'dotenv';
-
-// 确保环境变量被加载（如果此文件被单独导入）
-if (!process.env.DB_HOST) {
-  dotenv.config();
-}
+// config/index.js 由 app.js 统一加载 dotenv，此文件不再重复调用
 
 const jwtSecret = process.env.JWT_SECRET || 'default_secret_change_in_production';
 const nodeEnv = process.env.NODE_ENV || 'development';

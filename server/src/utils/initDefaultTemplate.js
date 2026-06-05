@@ -12,85 +12,103 @@ const DATA_DIR = path.join(__dirname, '..', 'data');
 // 已知模板清单：提供详细的元数据（名称、描述、匹配规则）
 // 如果文件在此清单中，使用清单中的元数据；否则自动从文件名生成
 const TEMPLATE_MANIFEST = [
+  // ── 简约版（按年龄段 + 性别） ──
   {
-    file: 'template-youth-female.html',
-    name: '青年女性模板',
+    file: 'shanhu-female.html',
+    name: '珊瑚·青春女',
     description: '珊瑚粉橘风格，适合18-30岁女性员工',
     match_gender: 'female',
     match_age_min: 18,
     match_age_max: 30
   },
   {
-    file: 'template-youth-male.html',
-    name: '青年男性模板',
+    file: 'qinglan-male.html',
+    name: '青蓝·青春男',
     description: '青蓝科技风格，适合18-30岁男性员工',
     match_gender: 'male',
     match_age_min: 18,
     match_age_max: 30
   },
   {
-    file: 'template-young-female.html',
-    name: '壮年女性模板',
-    description: '粉红浪漫风格，适合30-45岁女性员工',
+    file: 'yinghua-female.html',
+    name: '樱花·轻熟女',
+    description: '粉红浪漫风格，适合31-45岁女性员工',
     match_gender: 'female',
     match_age_min: 31,
     match_age_max: 45
   },
   {
-    file: 'template-young-male.html',
-    name: '壮年男性模板',
-    description: '天蓝清新风格，适合30-45岁男性员工',
+    file: 'tianlan-male.html',
+    name: '天蓝·轻熟男',
+    description: '天蓝清新风格，适合31-45岁男性员工',
     match_gender: 'male',
     match_age_min: 31,
     match_age_max: 45
   },
   {
-    file: 'template-middle-female.html',
-    name: '中年女性模板',
-    description: '紫色优雅风格，适合45-65岁女性员工',
+    file: 'ziyun-female.html',
+    name: '紫韵·雅致女',
+    description: '紫色优雅风格，适合46-65岁女性员工',
     match_gender: 'female',
     match_age_min: 46,
     match_age_max: 65
   },
   {
-    file: 'template-middle-male.html',
-    name: '中年男性模板',
-    description: '深蓝沉稳风格，适合45-65岁男性员工',
+    file: 'chenwen-male.html',
+    name: '沉稳·雅致男',
+    description: '深蓝沉稳风格，适合46-65岁男性员工',
     match_gender: 'male',
     match_age_min: 46,
     match_age_max: 65
   },
   {
-    file: 'template-universal.html',
-    name: '金色通用模板',
+    file: 'xiqing.html',
+    name: '喜庆·通用',
     description: '金色喜庆风格，适合所有员工（兜底模板）',
     match_gender: 'all'
   },
+  // ── 蛋糕版（含 SVG 蛋糕 + 蜡烛字母动画） ──
   {
-    file: 'index.html',
-    name: '粉色女性模板',
-    description: '粉色浪漫风格，适合女性员工',
+    file: 'fense-female.html',
+    name: '粉甜·女性',
+    description: '粉色浪漫蛋糕风格，适合女性员工',
     match_gender: 'female'
   },
   {
-    file: 'male.html',
-    name: '蓝色男性模板',
-    description: '蓝色简洁风格，适合男性员工',
+    file: 'lanse-male.html',
+    name: '蔚蓝·男性',
+    description: '蓝色简洁蛋糕风格，适合男性员工',
     match_gender: 'male'
   },
   {
-    file: 'universal.html',
-    name: '金色通用模板(详细版)',
-    description: '金色精致风格，包含部门职位信息，适合所有员工',
+    file: 'jinhui.html',
+    name: '金辉·通用',
+    description: '金色精致蛋糕风格，包含部门职位信息，适合所有员工',
     match_gender: 'all'
   },
+  // ── 邀请函 ──
   {
-    file: 'mb1.html',
-    name: '生日邀请函模板',
+    file: 'yaoqing.html',
+    name: '烟花邀请',
     description: '烟花动画风格的生日邀请函（不含占位符）',
     match_gender: 'all'
   }
 ];
+
+// 旧名称 → 新名称的映射（一次性数据库迁移，保持记录 ID 不变）
+const NAME_MIGRATION = {
+  '青年女性模板':        '珊瑚·青春女',
+  '青年男性模板':        '青蓝·青春男',
+  '壮年女性模板':        '樱花·轻熟女',
+  '壮年男性模板':        '天蓝·轻熟男',
+  '中年女性模板':        '紫韵·雅致女',
+  '中年男性模板':        '沉稳·雅致男',
+  '金色通用模板':        '喜庆·通用',
+  '粉色女性模板':        '粉甜·女性',
+  '蓝色男性模板':        '蔚蓝·男性',
+  '金色通用模板(详细版)': '金辉·通用',
+  '生日邀请函模板':      '烟花邀请'
+};
 
 /**
  * 从文件名自动生成模板元数据
@@ -141,7 +159,23 @@ const initDefaultTemplate = async () => {
     }
   }
 
-  // 第四步：逐个处理入库（幂等 upsert：按名称查找，有则更新，无则创建）
+  // 第四步：一次性名称迁移（旧名称 → 新名称，保持记录 ID 不变）
+  for (const [oldName, newName] of Object.entries(NAME_MIGRATION)) {
+    try {
+      const oldRecord = await Template.findOne({ where: { name: oldName } });
+      if (oldRecord) {
+        const newRecord = await Template.findOne({ where: { name: newName } });
+        if (!newRecord) {
+          await oldRecord.update({ name: newName });
+          console.log(`[模板] 名称迁移: ${oldName} → ${newName}`);
+        }
+      }
+    } catch (err) {
+      console.warn(`[模板] 名称迁移失败: ${oldName} → ${newName}:`, err.message);
+    }
+  }
+
+  // 第五步：逐个处理入库（幂等 upsert：按名称查找，有则更新，无则创建）
   for (const entry of allEntries) {
     try {
       const filePath = path.join(DATA_DIR, entry.file);

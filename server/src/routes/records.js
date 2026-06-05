@@ -3,9 +3,7 @@ import { Op } from 'sequelize';
 import { success, error } from '../utils/response.js';
 import { SendRecord, Employee, Template } from '../models/index.js';
 import { authMiddleware } from '../middlewares/auth.js';
-import { matchTemplate } from '../services/templateMatcher.js';
-import { generateCard } from '../services/cardGenerator.js';
-import { sendSMS } from '../services/smsService.js';
+import { sendBirthdayCard } from '../services/sendService.js';
 
 const router = express.Router();
 
@@ -16,7 +14,9 @@ router.use(authMiddleware);
 router.get('/', async (req, res) => {
   try {
     const { page = 1, pageSize = 10, employeeId, status, startDate, endDate } = req.query;
-    const offset = (page - 1) * pageSize;
+    const pageNum = parseInt(page);
+    const sizeNum = parseInt(pageSize);
+    const offset = (pageNum - 1) * sizeNum;
     
     const where = {};
     
@@ -25,8 +25,15 @@ router.get('/', async (req, res) => {
     if (status) where.send_status = status;
     if (startDate || endDate) {
       where.send_time = {};
-      if (startDate) where.send_time[Op.gte] = new Date(startDate);
-      if (endDate) where.send_time[Op.lte] = new Date(endDate);
+      // 使用本地时间解析，避免 UTC 截断问题（与 scheduler.js 保持一致）
+      if (startDate) {
+        const [y, m, d] = startDate.split('-').map(Number);
+        where.send_time[Op.gte] = new Date(y, m - 1, d);
+      }
+      if (endDate) {
+        const [y, m, d] = endDate.split('-').map(Number);
+        where.send_time[Op.lte] = new Date(y, m - 1, d, 23, 59, 59);
+      }
     }
     
     const { count, rows } = await SendRecord.findAndCountAll({
@@ -42,14 +49,14 @@ router.get('/', async (req, res) => {
       }],
       order: [['created_at', 'DESC']],
       offset,
-      limit: parseInt(pageSize)
+      limit: sizeNum
     });
     
     success(res, {
       list: rows,
       total: count,
-      page: parseInt(page),
-      pageSize: parseInt(pageSize)
+      page: pageNum,
+      pageSize: sizeNum
     });
   } catch (err) {
     error(res, err.message);
@@ -77,56 +84,24 @@ router.get('/stats', async (req, res) => {
 // 手动测试发送（完整流程：匹配模板 -> 生成贺卡 -> 发送短信 -> 创建记录）
 router.post('/test-send/:employeeId', async (req, res) => {
   try {
-    const { employeeId } = req.params;
-    
-    // 检查员工是否存在
-    const employee = await Employee.findByPk(employeeId);
-    if (!employee) {
-      return error(res, '员工不存在', 404);
+    const result = await sendBirthdayCard({ employeeId: req.params.employeeId, adminId: req.user.id });
+
+    if (!result.employee) {
+      return error(res, result.error, 404);
     }
-    
-    // 1. 匹配模板
-    const template = await matchTemplate(employee);
-    if (!template) {
-      return error(res, '没有可用的模板', 400);
+    if (!result.template) {
+      return error(res, result.error, 400);
     }
-
-    // 2. 生成贺卡
-    const cardResult = await generateCard(template, employee);
-
-    // 3. 创建待发送记录
-    const record = await SendRecord.create({
-      employee_id: employee.id,
-      template_id: template.id,
-      card_url: cardResult.cardUrl,
-      card_id: cardResult.cardId,
-      send_status: 'pending',
-      send_time: new Date(),
-      admin_id: req.user.id
-    });
-
-    // 4. 发送短信
-    const smsResult = await sendSMS(employee.phone, cardResult.cardUrl, employee.name);
-
-    // 5. 更新记录
-    await record.update({
-      send_status: smsResult.success ? 'success' : 'failed',
-      message_id: smsResult.messageId,
-      sms_provider: smsResult.provider,
-      retry_count: smsResult.retryCount,
-      error_message: smsResult.error || null,
-      send_time: new Date()
-    });
 
     success(res, {
-      employee: employee.name,
-      template: template.name,
-      cardUrl: cardResult.cardUrl,
-      smsStatus: smsResult.success ? 'success' : 'failed',
-      smsProvider: smsResult.provider,
-      messageId: smsResult.messageId,
-      smsError: smsResult.error || null
-    }, smsResult.success ? '测试发送成功' : '贺卡生成成功，短信发送失败');
+      employee: result.employee.name,
+      template: result.template.name,
+      cardUrl: result.cardUrl,
+      smsStatus: result.smsStatus,
+      smsProvider: result.smsProvider,
+      messageId: result.messageId,
+      smsError: result.error
+    }, result.success ? '测试发送成功' : '贺卡生成成功，短信发送失败');
   } catch (err) {
     error(res, err.message);
   }

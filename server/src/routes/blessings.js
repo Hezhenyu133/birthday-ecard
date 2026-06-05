@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { success, error } from '../utils/response.js';
 import { authMiddleware } from '../middlewares/auth.js';
-import { Blessing } from '../models/index.js';
+import { Blessing, Template } from '../models/index.js';
 
 const router = Router();
 
@@ -81,11 +81,19 @@ router.put('/:id', async (req, res) => {
 // DELETE /api/blessings/:id - 删除祝福语
 router.delete('/:id', async (req, res) => {
   try {
+    // 检查是否有模板引用此祝福语
+    const refCount = await Template.count({ where: { default_blessing_id: req.params.id } });
+    if (refCount > 0) {
+      // 解除模板关联
+      await Template.update({ default_blessing_id: null }, { where: { default_blessing_id: req.params.id } });
+      console.log(`[祝福语] 已解除 ${refCount} 个模板的默认祝福语关联`);
+    }
+
     const deleted = await Blessing.destroy({ where: { id: req.params.id } });
     if (!deleted) {
       return error(res, '祝福语不存在', 404);
     }
-    success(res, null, '删除成功');
+    success(res, null, refCount > 0 ? `删除成功，已解除 ${refCount} 个模板的关联` : '删除成功');
   } catch (err) {
     error(res, err.message);
   }
