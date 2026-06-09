@@ -33,6 +33,14 @@
             <el-tag :type="row.is_active ? 'success' : 'info'">{{ row.is_active ? '启用' : '禁用' }}</el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="引用模板" width="120">
+          <template #default="{ row }">
+            <el-tag v-if="row.template_count > 0" type="warning" size="small">
+              {{ row.template_count }} 个模板
+            </el-tag>
+            <span v-else style="color: #909399; font-size: 13px;">未引用</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="220">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
@@ -98,14 +106,19 @@ const handleEdit = (row: Blessing) => {
 
 const handleDelete = async (row: Blessing) => {
   try {
-    await ElMessageBox.confirm('确定要删除此祝福语吗？', '提示', {
+    const refCount = (row as any).template_count || 0
+    const confirmMsg = refCount > 0
+      ? `确定要删除此祝福语吗？\n\n⚠️ 警告：该祝福语正在被 ${refCount} 个模板引用，删除后这些模板的默认祝福语将被清空。`
+      : '确定要删除此祝福语吗？'
+    await ElMessageBox.confirm(confirmMsg, '提示', {
       confirmButtonText: '删除',
       cancelButtonText: '取消',
-      type: 'warning'
+      type: refCount > 0 ? 'warning' : 'info',
+      confirmButtonClass: refCount > 0 ? 'el-button--danger' : ''
     })
     if (!row.id) return
     await deleteBlessing(row.id)
-    ElMessage.success('删除成功')
+    ElMessage.success(refCount > 0 ? `删除成功，已解除 ${refCount} 个模板的关联` : '删除成功')
     loadBlessings()
   } catch (error) {
     if (error !== 'cancel') {

@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🎁 惊喜礼盒 · 生日贺卡</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body, html {
+    width: 100%; height: 100%; overflow: hidden;
+    font-family: "PingFang SC","Microsoft YaHei", sans-serif;
+    background: #1a0a2e; touch-action: none; color: #fff;
+}
+
+/* 翻页容器 */
+.swiper-container {
+    width: 100%; height: 100%;
+    position: relative; z-index: 10;
+    display: flex; flex-direction: column;
+    transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.page {
+    min-height: 100vh; width: 100%; flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative; overflow: hidden; padding: 24px;
+}
+
+/* 页面背景 */
+.page-1 { background: radial-gradient(ellipse at 50% 40%, #2d1b69 0%, #1a0a2e 60%, #0d0520 100%); }
+.page-2 { background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+.page-3 { background: linear-gradient(160deg, #1a0a2e 0%, #2d1b69 50%, #1a0a2e 100%); }
+.page-4 { background: radial-gradient(ellipse at 50% 60%, #2d1b69 0%, #1a0a2e 60%, #0d0520 100%); }
+
+/* 3D 礼盒（封面） */
+.gift-scene {
+    position: relative; z-index: 5;
+    width: min(60vw, 260px); height: min(60vw, 260px);
+    perspective: 600px;
+}
+.gift-box {
+    width: 100%; height: 100%; position: relative;
+    transform-style: preserve-3d;
+    animation: giftFloat 4s ease-in-out infinite;
+}
+@keyframes giftFloat {
+    0%, 100% { transform: translateY(0) rotateY(-5deg); }
+    50% { transform: translateY(-14px) rotateY(5deg); }
+}
+.gift-lid {
+    position: absolute; top: 0; left: 10%; width: 80%; height: 25%;
+    background: linear-gradient(135deg, #e91e63, #c2185b);
+    border-radius: 8px 8px 0 0; transform-origin: bottom center;
+    animation: lidOpen 3s ease-in-out infinite; z-index: 3;
+    box-shadow: 0 -4px 20px rgba(233,30,99,0.3);
+}
+@keyframes lidOpen {
+    0%, 60%, 100% { transform: rotateX(0deg) translateY(0); }
+    70%, 90% { transform: rotateX(-35deg) translateY(-12px); }
+}
+.gift-body {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 75%;
+    background: linear-gradient(135deg, #f06292, #e91e63);
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 15px 40px rgba(233,30,99,0.25);
+}
+.gift-ribbon-v {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 18%; height: 100%;
+    background: linear-gradient(180deg, #ffd54f, #ffb300); z-index: 2;
+}
+.gift-ribbon-h {
+    position: absolute; top: 50%; left: 0; transform: translateY(-50%);
+    width: 100%; height: 18%;
+    background: linear-gradient(90deg, #ffd54f, #ffb300); z-index: 2;
+}
+.gift-bow {
+    position: absolute; top: -8%; left: 50%; transform: translateX(-50%);
+    font-size: clamp(30px, 8vw, 50px); z-index: 4;
+    animation: bowBounce 2s ease-in-out infinite;
+    filter: drop-shadow(0 4px 12px rgba(255,213,79,0.4));
+}
+@keyframes bowBounce {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.08) translateY(-3px); }
+}
+
+/* 光晕 */
+.glow-orb {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: min(70vw, 350px); height: min(70vw, 350px); border-radius: 50%;
+    background: radial-gradient(circle, rgba(233,30,99,0.12) 0%, transparent 70%);
+    animation: orbPulse 4s ease-in-out infinite; z-index: 1;
+}
+@keyframes orbPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+    50% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+}
+
+/* 卡片 */
+.info-card, .bless-card {
+    width: 88%; max-width: 420px; position: relative; z-index: 5;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 24px; padding: 40px 28px; text-align: center;
+    box-shadow: 0 16px 50px rgba(0,0,0,0.15); max-height: 85vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+.card-label {
+    font-size: 11px; color: #f48fb1; letter-spacing: 5px;
+    text-transform: uppercase; margin-bottom: 8px;
+}
+.card-name {
+    font-size: clamp(26px, 7vw, 38px); font-weight: 700; color: #fff;
+    letter-spacing: 4px; margin-bottom: 6px;
+}
+.card-dept {
+    font-size: clamp(12px, 2.5vw, 15px); color: rgba(255,255,255,0.6);
+    letter-spacing: 2px; margin-bottom: 22px;
+}
+.card-divider {
+    width: 50px; height: 2px; margin: 0 auto 22px;
+    background: linear-gradient(90deg, transparent, #f48fb1, transparent);
+}
+.card-details { display: flex; flex-direction: column; gap: 12px; }
+.card-row {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    font-size: clamp(13px, 3vw, 15px); color: rgba(255,255,255,0.75);
+    padding: 8px 16px; border-radius: 10px;
+    background: rgba(255,255,255,0.05);
+}
+.card-row .icon { font-size: 16px; }
+
+.bless-label {
+    font-size: 11px; color: #f48fb1; letter-spacing: 5px;
+    text-transform: uppercase; margin-bottom: 8px;
+}
+.bless-title {
+    font-size: clamp(18px, 4.5vw, 24px); font-weight: 600; color: #f48fb1;
+    letter-spacing: 3px; margin-bottom: 22px;
+}
+.bless-text {
+    text-align: left; font-size: clamp(14px, 3.2vw, 16px); line-height: 1.9;
+    color: rgba(255,255,255,0.85); text-indent: 2em; white-space: pre-wrap;
+    margin-bottom: 24px;
+}
+.bless-footer {
+    border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 16px;
+    display: flex; flex-direction: column; gap: 4px;
+}
+.bless-sign { font-size: 14px; color: rgba(255,255,255,0.7); letter-spacing: 2px; }
+.bless-date { font-size: 12px; color: rgba(255,255,255,0.4); letter-spacing: 1px; }
+
+/* 尾封礼盒（打开状态） */
+.back-gift {
+    position: relative; z-index: 5;
+    width: min(55vw, 220px); height: min(55vw, 220px);
+    display: grid; place-items: center;
+}
+.back-gift-box {
+    width: 100%; height: 100%; position: relative;
+    animation: giftFloat 4s ease-in-out infinite;
+}
+.back-lid {
+    position: absolute; top: 0; left: 10%; width: 80%; height: 25%;
+    background: linear-gradient(135deg, #e91e63, #c2185b);
+    border-radius: 8px 8px 0 0;
+    transform: rotateX(-25deg) translateY(-8px);
+    transform-origin: bottom center; z-index: 3;
+}
+.back-body {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 75%;
+    background: linear-gradient(135deg, #f06292, #e91e63);
+    border-radius: 0 0 10px 10px;
+}
+.back-ribbon-v {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 18%; height: 100%;
+    background: linear-gradient(180deg, #ffd54f, #ffb300); z-index: 2;
+}
+.back-ribbon-h {
+    position: absolute; top: 50%; left: 0; transform: translateY(-50%);
+    width: 100%; height: 18%;
+    background: linear-gradient(90deg, #ffd54f, #ffb300); z-index: 2;
+}
+.back-sparkle {
+    position: absolute; font-size: 24px;
+    animation: sparkleFloat var(--dur, 3s) var(--delay, 0s) ease-in-out infinite;
+}
+@keyframes sparkleFloat {
+    0%, 100% { transform: translateY(0) scale(0.8); opacity: 0.4; }
+    50% { transform: translateY(-10px) scale(1.1); opacity: 1; }
+}
+
+/* 入场动画 */
+.anim-item {
+    opacity: 0; transform: translateY(28px);
+    transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1);
+}
+.anim-item.visible { opacity: 1; transform: translateY(0); }
+.anim-d1 { transition-delay: 0.1s; }
+.anim-d2 { transition-delay: 0.2s; }
+.anim-d3 { transition-delay: 0.3s; }
+.anim-d4 { transition-delay: 0.4s; }
+.anim-d5 { transition-delay: 0.5s; }
+.anim-d6 { transition-delay: 0.6s; }
+
+/* 翻页箭头 */
+.arrow {
+    position: absolute; bottom: 26px; left: 50%; width: 22px; height: 22px;
+    border-right: 2.5px solid rgba(244,143,177,0.5);
+    border-bottom: 2.5px solid rgba(244,143,177,0.5);
+    transform: translateX(-50%) rotate(45deg);
+    animation: arrowBounce 1.8s ease-in-out infinite;
+    cursor: pointer; z-index: 20; opacity: 0.5;
+}
+@keyframes arrowBounce {
+    0%, 100% { transform: translateX(-50%) rotate(45deg) translateY(0); opacity: 0.3; }
+    50%      { transform: translateX(-50%) rotate(45deg) translateY(-10px); opacity: 0.7; }
+}
+
+/* 页面指示点 */
+.page-dots {
+    position: fixed; right: 14px; top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 10px; z-index: 50;
+}
+.page-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(244,143,177,0.2); transition: all 0.4s;
+}
+.page-dot.active {
+    background: #f48fb1; box-shadow: 0 0 8px rgba(244,143,177,0.4);
+    transform: scale(1.4);
+}
+
+/* 音乐按钮 */
+.music-btn {
+    position: fixed; top: 16px; right: 16px; z-index: 100;
+    width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.15);
+    display: grid; place-items: center; cursor: pointer;
+    font-size: 17px; color: #f48fb1; transition: all 0.3s;
+}
+.music-btn.playing { animation: musicSpin 3s linear infinite; }
+@keyframes musicSpin { to { transform: rotate(360deg); } }
+
+@media (max-width: 420px) {
+    .info-card, .bless-card { padding: 32px 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+</head>
+<body>
+
+
+<!-- 页面指示点 -->
+<div class="page-dots" id="pageDots">
+    <div class="page-dot active"></div>
+    <div class="page-dot"></div>
+    <div class="page-dot"></div>
+    <div class="page-dot"></div>
+</div>
+
+<!-- 翻页容器 -->
+<div class="swiper-container" id="swiper">
+
+    <!-- 第1页：封面 - 3D礼盒 -->
+    <div class="page page-1" id="page1">
+        <div class="glow-orb"></div>
+        <div class="gift-scene">
+            <div class="gift-box">
+                <div class="gift-lid"></div>
+                <div class="gift-body">
+                    <div class="gift-ribbon-v"></div>
+                    <div class="gift-ribbon-h"></div>
+                </div>
+                <div class="gift-bow">🎀</div>
+            </div>
+        </div>
+        <div class="arrow" onclick="nextPage()"></div>
+    </div>
+
+    <!-- 第2页：员工信息 -->
+    <div class="page page-2" id="page2">
+        <div class="info-card">
+            <div class="card-label anim-item anim-d1">HAPPY BIRTHDAY</div>
+            <div class="card-name anim-item anim-d2">{{name}}</div>
+            <div class="card-dept anim-item anim-d3">{{department}} · {{position}}</div>
+            <div class="card-divider anim-item anim-d4"></div>
+            <div class="card-details">
+                <div class="card-row anim-item anim-d4"><span class="icon">🎂</span> 生日：{{birthday}}</div>
+            </div>
+        </div>
+        <div class="arrow" onclick="nextPage()"></div>
+    </div>
+
+    <!-- 第3页：祝福语 -->
+    <div class="page page-3" id="page3">
+        <div class="bless-card">
+            <div class="bless-label anim-item anim-d1">BIRTHDAY WISHES</div>
+            <div class="bless-title anim-item anim-d2">生日祝福</div>
+            <!-- editable-start -->
+            <div class="bless-text anim-item anim-d3">{{blessing}}</div>
+            <!-- editable-end -->
+            <div class="bless-footer">
+                <div class="bless-sign anim-item anim-d4">{{sender}} 敬上</div>
+                <div class="bless-date anim-item anim-d5">{{year}}年{{month}}月{{day}}日</div>
+            </div>
+        </div>
+        <div class="arrow" onclick="nextPage()"></div>
+    </div>
+
+    <!-- 第4页：尾封 - 打开的礼盒 + 闪烁 -->
+    <div class="page page-4" id="page4">
+        <div class="glow-orb"></div>
+        <div class="back-gift">
+            <div class="back-gift-box">
+                <div class="back-lid"></div>
+                <div class="back-body">
+                    <div class="back-ribbon-v"></div>
+                    <div class="back-ribbon-h"></div>
+                </div>
+            </div>
+            <div class="back-sparkle" style="top:10%;left:15%;--dur:2.5s;--delay:0s;">✨</div>
+            <div class="back-sparkle" style="top:5%;right:12%;--dur:3s;--delay:0.8s;">⭐</div>
+            <div class="back-sparkle" style="bottom:15%;left:8%;--dur:2.8s;--delay:1.5s;">💫</div>
+            <div class="back-sparkle" style="bottom:10%;right:10%;--dur:3.2s;--delay:0.4s;">🌟</div>
+            <div class="back-sparkle" style="top:40%;left:0%;--dur:2.2s;--delay:1s;">✨</div>
+            <div class="back-sparkle" style="top:35%;right:0%;--dur:2.6s;--delay:1.8s;">⭐</div>
+        </div>
+        <div class="arrow" onclick="prevPage()" style="transform:translateX(-50%) rotate(135deg);animation:none;"></div>
+    </div>
+</div>
+
+<!-- 音乐按钮 -->
+<button class="music-btn" id="musicBtn" aria-label="背景音乐">🎵</button>
+
+<script>
+// 翻页控制
+let currentPage = 0;
+const totalPages = 4;
+const swiper = document.getElementById('swiper');
+const dots = document.querySelectorAll('.page-dot');
+
+function updateSlide() {
+    swiper.style.transform = `translateY(-${currentPage * 100}vh)`;
+    dots.forEach((d, i) => d.classList.toggle('active', i === currentPage));
+    triggerAnim(currentPage);
+}
+function nextPage() { if (currentPage < totalPages - 1) { currentPage++; updateSlide(); } }
+function prevPage() { if (currentPage > 0) { currentPage--; updateSlide(); } }
+
+let touchStartY = 0;
+document.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
+document.addEventListener('touchend', e => {
+    const d = touchStartY - e.changedTouches[0].clientY;
+    if (d > 45) nextPage(); else if (d < -45) prevPage();
+});
+
+let wheelLock = false;
+document.addEventListener('wheel', e => {
+    e.preventDefault(); if (wheelLock) return; wheelLock = true;
+    if (e.deltaY > 0) nextPage(); else prevPage();
+    setTimeout(() => wheelLock = false, 850);
+}, { passive: false });
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); nextPage(); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); prevPage(); }
+});
+
+// 入场动画触发
+function triggerAnim(idx) {
+    const el = document.getElementById('page' + (idx + 1));
+    if (!el) return;
+    const items = el.querySelectorAll('.anim-item');
+    items.forEach(i => i.classList.remove('visible'));
+    void el.offsetWidth;
+    items.forEach(i => setTimeout(() => i.classList.add('visible'), 80));
+}
+
+// 音乐盒 — Web Audio API 合成 Happy Birthday
+(function() {
+    let ac = null, playing = false, timer = null;
+    const B = 0.42;
+    const melody = [
+        {f:262,t:0,d:B*.75},{f:262,t:B*.75,d:B*.25},{f:294,t:B*1,d:B},{f:262,t:B*2,d:B},
+        {f:349,t:B*3,d:B},{f:330,t:B*4,d:B*2},{f:262,t:B*6,d:B*.75},{f:262,t:B*6.75,d:B*.25},
+        {f:294,t:B*7,d:B},{f:262,t:B*8,d:B},{f:392,t:B*9,d:B},{f:349,t:B*10,d:B*2},
+        {f:262,t:B*12,d:B*.75},{f:262,t:B*12.75,d:B*.25},{f:523,t:B*13,d:B},{f:440,t:B*14,d:B},
+        {f:349,t:B*15,d:B},{f:330,t:B*16,d:B},{f:294,t:B*17,d:B*2},
+        {f:349,t:B*19,d:B*.75},{f:349,t:B*19.75,d:B*.25},{f:440,t:B*20,d:B},{f:349,t:B*21,d:B},
+        {f:392,t:B*22,d:B},{f:349,t:B*23,d:B*2}
+    ];
+    const bass = [
+        {f:131,t:0,d:B*2},{f:175,t:B*2,d:B*2},{f:131,t:B*4,d:B*2},{f:131,t:B*6,d:B*2},
+        {f:175,t:B*8,d:B*2},{f:131,t:B*10,d:B*2},{f:131,t:B*12,d:B*2},{f:175,t:B*14,d:B*2},
+        {f:131,t:B*16,d:B*2},{f:131,t:B*18,d:B},{f:175,t:B*19,d:B*2},{f:131,t:B*21,d:B*2},{f:131,t:B*23,d:B*2}
+    ];
+    const LOOP = B * 25.5;
+
+    function playNote(freq, t, dur, vol) {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sine'; o.frequency.value = freq;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.012);
+        g.gain.exponentialRampToValueAtTime(vol * 0.3, t + dur * 0.4);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur + 0.01);
+    }
+    function playBass(freq, t, dur, vol) {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'triangle'; o.frequency.value = freq;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.03);
+        g.gain.setValueAtTime(vol, t + dur * 0.7);
+        g.gain.linearRampToValueAtTime(0, t + dur);
+        o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur + 0.01);
+    }
+    function playLoop() {
+        if (!ac) return;
+        const t0 = ac.currentTime + 0.05;
+        melody.forEach(n => playNote(n.f, t0 + n.t, n.d, 0.07));
+        bass.forEach(n => playBass(n.f, t0 + n.t, n.d, 0.02));
+        timer = setTimeout(playLoop, LOOP * 1000);
+    }
+
+    const btn = document.getElementById('musicBtn');
+    function start() {
+        if (playing) return;
+        if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+        if (ac.state === 'suspended') ac.resume();
+        playing = true; btn.classList.add('playing'); btn.textContent = '🎶'; playLoop();
+    }
+    function stop() {
+        if (!playing) return;
+        if (timer) clearTimeout(timer);
+        if (ac) { ac.close(); ac = null; }
+        playing = false; btn.classList.remove('playing'); btn.textContent = '🎵';
+    }
+    btn.addEventListener('click', e => { e.stopPropagation(); if (playing) stop(); else start(); });
+
+    function tryAuto() {
+        try {
+            ac = new (window.AudioContext || window.webkitAudioContext)();
+            if (ac.state === 'running') {
+                playing = true; btn.classList.add('playing'); btn.textContent = '🎶'; playLoop(); return true;
+            } else { ac.close(); ac = null; return false; }
+        } catch(e) { return false; }
+    }
+    if (!tryAuto()) {
+        const evts = ['click','touchstart','keydown'];
+        function onFirst() { start(); evts.forEach(ev => document.removeEventListener(ev, onFirst, true)); }
+        evts.forEach(ev => document.addEventListener(ev, onFirst, { once: true, capture: true }));
+    }
+})();
+</script>
+</body>
+</html>

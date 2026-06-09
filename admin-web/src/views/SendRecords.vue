@@ -125,7 +125,7 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
             <el-button
               type="info"
@@ -143,6 +143,13 @@
               :disabled="row.send_status === 'success'"
             >
               重发
+            </el-button>
+            <el-button 
+              type="danger" 
+              size="small" 
+              @click="handleDelete(row)"
+            >
+              删除
             </el-button>
           </template>
         </el-table-column>
@@ -199,8 +206,8 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { Search, Refresh, View, Link } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
-import { getRecordList, getRecordStats, testSend } from '@/api/records'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { getRecordList, getRecordStats, testSend, deleteRecord } from '@/api/records'
 import type { SendRecord, RecordQueryParams } from '@/api/records'
 
 // 统计数据
@@ -314,9 +321,10 @@ const handleSearch = () => {
 
 // 重置
 const handleReset = () => {
-    searchForm.status = undefined
-    searchForm.startDate = undefined
-    searchForm.endDate = undefined
+  searchForm.status = undefined
+  searchForm.startDate = undefined
+  searchForm.endDate = undefined
+  dateRange.value = []
   handleSearch()
 }
 
@@ -342,6 +350,31 @@ const handleTestSend = async (employeeId: number) => {
     await Promise.all([loadRecords(), loadStats()])
   } catch (error) {
     ElMessage.error('发送失败')
+  }
+}
+
+// 删除记录
+const handleDelete = async (row: SendRecord) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除员工「${row.employee?.name || '未知'}」的这条发送记录吗？`,
+      '提示',
+      {
+        confirmButtonText: '删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger'
+      }
+    )
+    if (!row.id) return
+    await deleteRecord(row.id)
+    ElMessage.success('删除成功')
+    await Promise.all([loadRecords(), loadStats()])
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除失败：', error)
+      ElMessage.error('删除失败')
+    }
   }
 }
 

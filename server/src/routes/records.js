@@ -107,4 +107,17 @@ router.post('/test-send/:employeeId', async (req, res) => {
   }
 });
 
+// DELETE /api/records/:id - 删除发送记录
+router.delete('/:id', async (req, res) => {
+  try {
+    const deleted = await SendRecord.destroy({ where: { id: req.params.id } });
+    if (!deleted) {
+      return error(res, '记录不存在', 404);
+    }
+    success(res, null, '删除成功');
+  } catch (err) {
+    error(res, err.message);
+  }
+});
+
 export default router;

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { success, error } from '../utils/response.js';
 import { authMiddleware } from '../middlewares/auth.js';
 import { Template, Blessing, Employee } from '../models/index.js';
+import { autoAssignBlessingToTemplate, pickRandomUniversalBlessing } from '../services/autoMatch.js';
 
 const router = Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -37,7 +38,12 @@ const sanitizeInput = (obj) => {
 router.get('/', async (req, res) => {
   try {
     const templates = await Template.findAll({
-      attributes: ['id', 'name', 'description', 'match_gender', 'match_age_min', 'match_age_max', 'default_blessing_id', 'is_active', 'created_at']
+      attributes: ['id', 'name', 'description', 'match_gender', 'match_age_min', 'match_age_max', 'default_blessing_id', 'is_active', 'created_at'],
+      include: [{
+        model: Blessing,
+        as: 'default_blessing',
+        attributes: ['id', 'content']
+      }]
     });
     success(res, templates);
   } catch (err) {
@@ -62,11 +68,43 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/templates - 新增模板
+// POST /api/templates - 新增模板（自动匹配通用祝福语）
 router.post('/', async (req, res) => {
   try {
     const template = await Template.create(sanitizeInput(req.body));
-    success(res, template, '添加成功');
+    // 若未手动指定祝福语，自动从通用祝福语中随机匹配
+    await autoAssignBlessingToTemplate(template);
+    // 重新查询以返回祝福语关联
+    const result = await Template.findByPk(template.id, {
+      include: [{ model: Blessing, as: 'default_blessing', attributes: ['id', 'content'] }]
+    });
+    success(res, result, '添加成功');
+  } catch (err) {
+    error(res, err.message);
+  }
+});
+
+// POST /api/templates/backfill-blessings - 回填：为所有未匹配祝福语的模板随机分配通用祝福语
+router.post('/backfill-blessings', async (req, res) => {
+  try {
+    const unmatched = await Template.findAll({
+      where: { default_blessing_id: null, is_active: true }
+    });
+
+    if (unmatched.length === 0) {
+      return success(res, { updated: 0 }, '所有模板均已匹配祝福语');
+    }
+
+    let updated = 0;
+    for (const tpl of unmatched) {
+      const blessing = await pickRandomUniversalBlessing();
+      if (blessing) {
+        await tpl.update({ default_blessing_id: blessing.id });
+        updated++;
+      }
+    }
+
+    success(res, { updated }, `已为 ${updated} 个模板补配祝福语`);
   } catch (err) {
     error(res, err.message);
   }
@@ -126,6 +164,7 @@ router.get('/:id/preview', async (req, res) => {
 
     // 使用示例数据替换占位符
     let html = template.html_content;
+    const now = new Date();
     const replacements = {
       '{{name}}': '张三',
       '{{department}}': '技术部',
@@ -133,7 +172,10 @@ router.get('/:id/preview', async (req, res) => {
       '{{birthday}}': '6月15日',
       '{{sender}}': '公司工会',
       '{{blessing}}': template.default_blessing?.content || '祝你生日快乐，万事如意！',
-      '{{year}}': new Date().getFullYear().toString()
+      '{{title}}': '张三的生日贺卡',
+      '{{year}}': now.getFullYear().toString(),
+      '{{month}}': (now.getMonth() + 1).toString(),
+      '{{day}}': now.getDate().toString()
     };
 
     for (const [placeholder, value] of Object.entries(replacements)) {

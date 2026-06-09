@@ -54,3 +54,8 @@ export const getRecordStats = (): Promise<RecordStats> => {
 export const testSend = (employeeId: number) => {
   return request.post(`/records/test-send/${employeeId}`)
 }
+
+// 删除发送记录
+export const deleteRecord = (id: number) => {
+  return request.delete(`/records/${id}`)
+}

@@ -40,6 +40,7 @@ This file provides guidance to Qoder (qoder.com) when working with code in this 
 
 - **server/** - 后端 Express API 服务
 - **admin-web/** - Vue 3 前端管理后台
+- **uploads/4页/** - 贺卡 HTML 模板文件（中文命名，含 admin 返回按钮）
 - **server/generated-cards/** - 动态生成的贺卡 HTML 文件存储目录
 - **server/uploads/** - Excel 上传临时目录
 - 贺卡展示页面为纯 HTML/CSS/JS 实现，不依赖 Vue 框架
@@ -59,10 +60,18 @@ birthday-card-system/
 │   ├── generated-cards/        # 运行时生成的贺卡 HTML
 │   ├── uploads/                # Excel 上传临时目录
 │   └── .env                    # 环境变量配置
+├── uploads/                    # 贺卡模板目录（中文命名）
+│   └── 4页/                   # 4页翻页式贺卡模板
+│       ├── _template_skeleton.html  # 通用骨架模板
+│       ├── 蛋糕.html / 粉色.html / 礼盒.html  # 各主题模板
+│       ├── 派对.html / 星光.html / 红礼盒.html
+│       ├── 寿桃.html / 烟花.html
+│       ├── 通用1.html / 通用2.html
+│       └── ...
 ├── admin-web/                  # 前端管理后台
 │   ├── src/
 │   │   ├── api/               # API 接口封装 (auth, employees, templates, records, blessings)
-│   │   ├── views/             # 页面组件 (8个页面)
+│   │   ├── views/             # 页面组件 (10个页面)
 │   │   ├── components/        # 公共组件 (MainLayout)
 │   │   ├── stores/            # Pinia 状态管理
 │   │   ├── router/            # 路由配置
@@ -108,7 +117,8 @@ npm run lint         # ESLint检查（待配置）
 - 所有 API 使用统一响应格式，JWT 认证保护管理接口
 
 ### Frontend Development
-- 8 个页面组件：Dashboard、EmployeeList、EmployeeForm、EmployeeImport、TemplateList、TemplateEdit、BlessingList、BlessingEdit、SendRecords、Login
+- 10 个页面组件：Dashboard、EmployeeList、EmployeeForm、EmployeeImport、TemplateList、TemplateEdit、BlessingList、BlessingEdit、SendRecords、Login
+- 模板、祝福语、发送记录、员工均支持删除功能（全部为数据库硬删除，级联清除关联数据）
 - 模板编辑采用纯文本编辑模式，通过 `<!-- editable -->` 标记提取可编辑区域
 - 发送记录页面展示短信内容和手机预览功能
 - 使用 Pinia 管理用户状态（token 存储）
@@ -123,8 +133,11 @@ npm run lint         # ESLint检查（待配置）
 - 切换到真实运营商只需修改 `.env` 中的 `SMS_PROVIDER` 和相关认证参数
 
 ### Template System
-- **模板存储**：`server/src/data/` 目录下的自包含 HTML 文件
-- **自动发现**：启动时自动扫描所有 `.html` 文件并写入数据库（幂等 upsert）
+- **模板存储**：`uploads/4页/` 目录下的中文命名 HTML 文件（如 蛋糕.html、礼盒.html）
+- **自动发现**：启动时自动扫描 `server/src/data/` 下所有 `.html` 文件并写入数据库（幂等 upsert）
+- **模板骨架**：`_template_skeleton.html` 为通用开发骨架，含 4 页翻页、Web Audio API 音乐播放、入场动画
+- **模板命名规范**：中文主题名（如 蛋糕、粉色、礼盒、派对、星光、红礼盒、寿桃、烟花、通用1、通用2）
+- **admin 按钮**：每个模板左上角固定「返回管理后台」按钮，链接 `http://localhost:5173`，配色匹配模板主题
 - **可编辑区域标记**：`<!-- editable-start -->` 和 `<!-- editable-end -->` 包裹祝福文本
 - **占位符**：`{{name}}`、`{{department}}`、`{{position}}`、`{{birthday}}`、`{{sender}}`、`{{blessing}}`、`{{year}}`
 - **祝福语管理**：Blessing 模型支持祝福语的增删改查，模板可绑定默认祝福语
@@ -140,10 +153,10 @@ npm run lint         # ESLint检查（待配置）
 API 接口规范详见技术设计文档，核心接口模块：
 
 - `/api/auth/*` - 认证相关（登录、修改密码）
-- `/api/employees/*` - 员工管理（CRUD、批量导入、手动发送）
-- `/api/templates/*` - 模板管理（CRUD、预览）
-- `/api/blessings/*` - 祝福语管理（CRUD）
-- `/api/records/*` - 发送记录查询、统计、测试发送
+- `/api/employees/*` - 员工管理（CRUD、批量导入、手动发送、**硬删除+级联删除发送记录**）
+- `/api/templates/*` - 模板管理（CRUD、预览、**硬删除+解除员工绑定**）
+- `/api/blessings/*` - 祝福语管理（CRUD、**硬删除+解除模板绑定**）
+- `/api/records/*` - 发送记录查询、统计、测试发送、**硬删除**
 - `/card/:cardId` - 贺卡公开访问（无需认证）
 
 ## Git Workflow

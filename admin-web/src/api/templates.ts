@@ -1,4 +1,5 @@
 import request from './request'
+import type { Blessing } from './blessings'
 
 // 模板信息接口
 export interface Template {
@@ -11,6 +12,7 @@ export interface Template {
   match_interests?: string | null
   html_content: string
   default_blessing_id?: number | null
+  default_blessing?: Blessing | null
   preview_image?: string | null
   is_active?: number
   created_at?: string
@@ -45,4 +47,9 @@ export const deleteTemplate = (id: number) => {
 // 预览模板（返回 HTML 字符串，响应拦截器已处理非 JSON 响应）
 export const previewTemplate = (id: number): Promise<string> => {
   return request.get(`/templates/${id}/preview`)
+}
+
+// 回填：为未匹配祝福语的模板自动分配通用祝福语
+export const backfillBlessings = (): Promise<{ updated: number }> => {
+  return request.post('/templates/backfill-blessings')
 }

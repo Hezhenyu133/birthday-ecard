@@ -29,9 +29,9 @@
 
         <el-form-item label="适用性别" prop="match_gender">
           <el-radio-group v-model="formData.match_gender">
-            <el-radio label="all">不限</el-radio>
-            <el-radio label="male">男性</el-radio>
-            <el-radio label="female">女性</el-radio>
+            <el-radio value="all">不限</el-radio>
+            <el-radio value="male">男性</el-radio>
+            <el-radio value="female">女性</el-radio>
           </el-radio-group>
         </el-form-item>
 

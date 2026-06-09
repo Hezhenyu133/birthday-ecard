@@ -14,6 +14,10 @@
               <el-icon><Upload /></el-icon>
               批量导入
             </el-button>
+            <el-button type="warning" @click="handleBackfillTemplates" :loading="backfilling">
+              <el-icon><MagicStick /></el-icon>
+              补配模板
+            </el-button>
           </div>
         </div>
       </template>
@@ -111,9 +115,9 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Plus, Upload, Search, Refresh } from '@element-plus/icons-vue'
+import { Plus, Upload, Search, Refresh, MagicStick } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getEmployeeList, getTodayBirthdayEmployees, deleteEmployee, generateEmployeeCard } from '@/api/employees'
+import { getEmployeeList, getTodayBirthdayEmployees, deleteEmployee, generateEmployeeCard, backfillTemplates } from '@/api/employees'
 import type { Employee, EmployeeQueryParams } from '@/api/employees'
 
 const router = useRouter()
@@ -128,6 +132,7 @@ const searchForm = reactive({
 // 表格数据
 const tableData = ref<Employee[]>([])
 const loading = ref(false)
+const backfilling = ref(false)
 
 // 分页
 const pagination = reactive({
@@ -201,11 +206,16 @@ const handleEdit = (row: Employee) => {
 // 删除员工
 const handleDelete = async (row: Employee) => {
   try {
-    await ElMessageBox.confirm(`确定要删除员工"${row.name}"吗？`, '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
+    await ElMessageBox.confirm(
+      `确定要永久删除员工「${row.name}」吗？\n\n⚠️ 该操作不可恢复，同时会删除该员工的所有发送记录。`,
+      '提示',
+      {
+        confirmButtonText: '永久删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger'
+      }
+    )
     
     await deleteEmployee(row.id!)
     ElMessage.success('删除成功')
@@ -227,6 +237,36 @@ const handleSend = async (row: Employee) => {
   } catch (error) {
     console.error('发送失败：', error)
     ElMessage.error('发送失败，请稍后重试')
+  }
+}
+
+// 补配模板（回填未匹配模板的员工）
+const handleBackfillTemplates = async () => {
+  try {
+    await ElMessageBox.confirm(
+      '将为所有未匹配模板的员工随机分配一个通用模板，确定继续？',
+      '补配模板',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info'
+      }
+    )
+    backfilling.value = true
+    const res = await backfillTemplates()
+    if (res.updated === 0) {
+      ElMessage.info('所有员工均已匹配模板，无需补配')
+    } else {
+      ElMessage.success(`已为 ${res.updated} 位员工补配模板`)
+    }
+    loadData()
+  } catch (err: any) {
+    if (err !== 'cancel') {
+      console.error('补配失败：', err)
+      ElMessage.error('补配失败，请稍后重试')
+    }
+  } finally {
+    backfilling.value = false
   }
 }
 

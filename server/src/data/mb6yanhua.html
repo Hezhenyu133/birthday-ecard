@@ -16,9 +16,14 @@
         width: 100%; 
         height: 100%; 
         z-index: 0; 
-        background: url('https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/4a6f99407f8c47df8a334898a7fa6e73.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202606042130297AFE985B181ADAEB5A2C&rrcfp=dafada99&x-expires=2096803829&x-signature=ix1ieIZC2ER0t9UsU8A5urKb2x0%3D') no-repeat center center;
+        background: url('https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/41a602daa6994ae5b47235793cbbb6f0.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=20260605152922165AFEC46CA7C506FEA6&rrcfp=dafada99&x-expires=2096868562&x-signature=8o%2FnCWR9EUFJf7sG6a%2F1ze7yjSE%3D') no-repeat center center;
         background-size: cover;
         opacity: 0.95;
+    }
+    /* 第二页独立背景（已替换为你最新的图片） */
+    .page-2 .bg-layer {
+        background: url('https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/0e696f8e27104c37b47416a1cc967d87.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202606051544142E307C13AAB61F0FE643&rrcfp=dafada99&x-expires=2096869455&x-signature=KTzDuCIu010pf0omMPcu2EF%2BGW8%3D') no-repeat center center;
+        background-size: cover;
     }
     .page-1 .content { z-index: 10; text-align: center; margin-top: -50px; }
     .main-title-en { font-size: 4rem; font-weight: bold; line-height: 1; letter-spacing: 2px; color: #a88b65; }
@@ -43,7 +48,7 @@
 <body>
 
 <div class="swiper-container" id="swiper">
-    <!-- 第一页：封面 -->
+    <!-- 第一页：封面（完全不变） -->
     <div class="page page-1">
         <div class="bg-layer"></div>
         <div class="music-icon"></div>
@@ -60,7 +65,7 @@
         <div class="arrow-up" style="transform: translateX(-50%) rotate(-45deg);" onclick="nextPage()"></div>
     </div>
 
-    <!-- 第二页：邀请函 -->
+    <!-- 第二页：邀请函（背景已替换） -->
     <div class="page page-2">
         <div class="bg-layer"></div>
         <div class="music-icon"></div>

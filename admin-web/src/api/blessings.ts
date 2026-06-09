@@ -7,6 +7,7 @@ export interface Blessing {
   match_age_min?: number | null
   match_age_max?: number | null
   is_active?: boolean
+  template_count?: number
   created_at?: string
   updated_at?: string
 }

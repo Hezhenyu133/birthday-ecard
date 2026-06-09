@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🎂 甜蜜蛋糕 · 生日贺卡</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body, html { width: 100%; height: 100%; overflow: hidden; font-family: "PingFang SC","Microsoft YaHei", sans-serif; background: #fff5f0; touch-action: none; color: #5d4037; }
+
+    #bgCanvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+    .swiper-container { width: 100%; height: 100%; position: relative; z-index: 10; display: flex; flex-direction: column; transition: transform 0.85s cubic-bezier(0.22,1,0.36,1); }
+    .page { min-height: 100vh; width: 100%; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; padding: 24px; }
+
+    /* 封面 - 暖粉渐变 */
+    .page-1 { background: linear-gradient(160deg, #fff0f5 0%, #ffe0e6 40%, #ffd6e0 100%); }
+    .page-4 { background: linear-gradient(160deg, #fff8e1 0%, #ffecb3 40%, #ffe082 100%); }
+
+    /* SVG 蛋糕 */
+    .cake-scene { position: relative; z-index: 5; width: min(70vw, 320px); height: min(70vw, 320px); display: grid; place-items: center; }
+    .cake-svg { width: 100%; height: 100%; filter: drop-shadow(0 12px 30px rgba(233,30,99,0.15)); animation: cakeFloat 3.5s ease-in-out infinite; }
+    @keyframes cakeFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+
+    /* 卡片 */
+    .info-card, .bless-card {
+        width: 88%; max-width: 420px; position: relative; z-index: 5;
+        background: rgba(255,255,255,0.92); backdrop-filter: blur(18px);
+        border-radius: 24px; padding: 38px 28px; text-align: center;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+        overflow-y: auto; max-height: 85vh; -webkit-overflow-scrolling: touch;
+    }
+    .info-card { border: 1.5px solid rgba(233,30,99,0.12); animation: cardRise 0.9s cubic-bezier(0.16,1,0.3,1) both; }
+    .bless-card { border: 1.5px solid rgba(255,152,0,0.12); animation: cardRise 0.9s cubic-bezier(0.16,1,0.3,1) both; }
+    @keyframes cardRise { 0%{opacity:0;transform:translateY(40px) scale(0.92)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+
+    .card-label { font-size: 11px; color: #f06292; letter-spacing: 5px; text-transform: uppercase; margin-bottom: 6px; }
+    .card-name { font-size: clamp(26px,7vw,38px); font-weight: 700; color: #c62828; letter-spacing: 4px; margin-bottom: 6px; }
+    .card-dept { font-size: clamp(12px,2.5vw,15px); color: #f06292; letter-spacing: 2px; margin-bottom: 20px; }
+    .card-divider { width: 50px; height: 2px; margin: 0 auto 20px; background: linear-gradient(90deg, transparent, #f48fb1, transparent); }
+    .card-details { display: flex; flex-direction: column; gap: 10px; }
+    .card-row { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: clamp(13px,3vw,15px); color: #795548; padding: 8px 14px; border-radius: 10px; background: rgba(233,30,99,0.04); }
+    .card-row .icon { font-size: 16px; }
+
+    .bless-title { font-size: clamp(18px,4.5vw,24px); font-weight: 600; color: #e65100; letter-spacing: 3px; margin-bottom: 20px; }
+    .bless-text { text-align: left; font-size: clamp(14px,3.2vw,16px); line-height: 1.9; color: #5d4037; text-indent: 2em; white-space: pre-wrap; margin-bottom: 22px; }
+    .bless-footer { border-top: 1px dashed rgba(255,152,0,0.2); padding-top: 16px; display: flex; flex-direction: column; gap: 4px; }
+    .bless-sign { font-size: 14px; color: #8d6e63; letter-spacing: 2px; }
+    .bless-date { font-size: 12px; color: #bcaaa4; letter-spacing: 1px; }
+
+    /* 入场动画 */
+    .anim-item { opacity: 0; transform: translateY(28px); transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1); }
+    .anim-item.visible { opacity: 1; transform: translateY(0); }
+    .anim-d1 { transition-delay: 0.1s; }
+    .anim-d2 { transition-delay: 0.2s; }
+    .anim-d3 { transition-delay: 0.3s; }
+    .anim-d4 { transition-delay: 0.4s; }
+    .anim-d5 { transition-delay: 0.5s; }
+    .anim-d6 { transition-delay: 0.6s; }
+
+    /* 尾封蛋糕 */
+    .back-cake-scene { position: relative; z-index: 5; width: min(55vw, 240px); height: min(55vw, 240px); display: grid; place-items: center; }
+    .back-cake-svg { width: 100%; height: 100%; animation: cakeFloat 3.5s ease-in-out infinite; filter: drop-shadow(0 8px 20px rgba(255,183,77,0.2)); }
+
+    .arrow { position: absolute; bottom: 26px; left: 50%; width: 22px; height: 22px; border-right: 2.5px solid rgba(244,143,177,0.5); border-bottom: 2.5px solid rgba(244,143,177,0.5); transform: translateX(-50%) rotate(45deg); animation: arrowBounce 1.8s ease-in-out infinite; cursor: pointer; z-index: 20; opacity: 0.5; }
+    @keyframes arrowBounce { 0%,100%{transform:translateX(-50%) rotate(45deg) translateY(0);opacity:0.3} 50%{transform:translateX(-50%) rotate(45deg) translateY(-10px);opacity:0.7} }
+
+    .page-dots { position: fixed; right: 14px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 50; }
+    .page-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(244,143,177,0.2); transition: all 0.4s; }
+    .page-dot.active { background: #f48fb1; box-shadow: 0 0 8px rgba(244,143,177,0.4); transform: scale(1.4); }
+
+    .music-btn { position: fixed; top: 16px; right: 16px; z-index: 100; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border: 1.5px solid rgba(244,143,177,0.2); display: grid; place-items: center; cursor: pointer; font-size: 17px; color: #f06292; transition: all 0.3s; }
+    .music-btn.playing { animation: musicSpin 3s linear infinite; }
+    @keyframes musicSpin { to { transform: rotate(360deg); } }
+
+    .particle-burst { position: absolute; pointer-events: none; z-index: 5; }
+    .burst-dot { position: absolute; border-radius: 50%; opacity: 0; animation: burstFly var(--bdur,1s) var(--bdelay,0s) ease-out forwards; }
+    @keyframes burstFly { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(var(--bx,50px),var(--by,-60px)) scale(0);opacity:0} }
+
+    .float-items { position: absolute; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+    .float-item { position: absolute; opacity: 0; animation: floatUp var(--dur,7s) var(--delay,0s) ease-in-out infinite; }
+    @keyframes floatUp { 0%{transform:translateY(0) rotate(0deg) scale(0.5);opacity:0} 12%{opacity:0.5;transform:translateY(-15px) rotate(8deg) scale(1)} 88%{opacity:0.5} 100%{transform:translateY(-105vh) rotate(var(--rot,15deg)) scale(0.6);opacity:0} }
+
+    @media(max-width:420px){.info-card,.bless-card{padding:30px 20px}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}}
+
+</style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+<div class="float-items" id="floatItems"></div>
+<div class="page-dots" id="pageDots"><div class="page-dot active"></div><div class="page-dot"></div><div class="page-dot"></div><div class="page-dot"></div></div>
+
+<div class="swiper-container" id="swiper">
+    <!-- 第1页：封面 - SVG蛋糕 -->
+    <div class="page page-1" id="page1">
+        <div class="cake-scene">
+            <svg class="cake-svg" viewBox="0 0 300 280">
+                <defs>
+                    <linearGradient id="p1" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#ffe0ec"/><stop offset="100%" stop-color="#f8bbd0"/></linearGradient>
+                    <linearGradient id="p2" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#fce4ec"/><stop offset="100%" stop-color="#f48fb1"/></linearGradient>
+                    <linearGradient id="p3" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#fff3e0"/><stop offset="100%" stop-color="#ffcc80"/></linearGradient>
+                </defs>
+                <!-- 盘子 -->
+                <ellipse cx="150" cy="245" rx="110" ry="18" fill="rgba(233,30,99,0.06)"/>
+                <ellipse cx="150" cy="240" rx="100" ry="15" fill="url(#p1)"/>
+                <!-- 底层 -->
+                <rect x="65" y="185" width="170" height="55" rx="18" fill="url(#p1)"/>
+                <circle cx="85" cy="238" r="8" fill="#f48fb1" opacity=".4"/><circle cx="120" cy="238" r="8" fill="#f48fb1" opacity=".4"/><circle cx="155" cy="238" r="8" fill="#f48fb1" opacity=".4"/><circle cx="190" cy="238" r="8" fill="#f48fb1" opacity=".4"/><circle cx="215" cy="238" r="8" fill="#f48fb1" opacity=".4"/>
+                <!-- 中层 -->
+                <rect x="85" y="135" width="130" height="50" rx="14" fill="url(#p2)"/>
+                <circle cx="100" cy="183" r="6" fill="#fff" opacity=".4"/><circle cx="130" cy="183" r="6" fill="#fff" opacity=".4"/><circle cx="160" cy="183" r="6" fill="#fff" opacity=".4"/><circle cx="190" cy="183" r="6" fill="#fff" opacity=".4"/>
+                <!-- 顶层 -->
+                <rect x="105" y="90" width="90" height="45" rx="12" fill="url(#p3)"/>
+                <circle cx="120" cy="133" r="5" fill="#fff" opacity=".5"/><circle cx="150" cy="133" r="5" fill="#fff" opacity=".5"/><circle cx="180" cy="133" r="5" fill="#fff" opacity=".5"/>
+                <!-- 蜡烛 -->
+                <rect x="135" y="52" width="8" height="38" rx="4" fill="#ffe082"/>
+                <rect x="157" y="58" width="8" height="32" rx="4" fill="#ffcc80"/>
+                <!-- 火焰 -->
+                <ellipse cx="139" cy="46" rx="5" ry="9" fill="#ff8a65" opacity=".9"><animate attributeName="ry" values="9;11;9" dur="0.8s" repeatCount="indefinite"/></ellipse>
+                <ellipse cx="139" cy="44" rx="3" ry="5" fill="#ffab40"><animate attributeName="ry" values="5;7;5" dur="0.6s" repeatCount="indefinite"/></ellipse>
+                <ellipse cx="161" cy="52" rx="5" ry="8" fill="#ff8a65" opacity=".9"><animate attributeName="ry" values="8;10;8" dur="0.9s" repeatCount="indefinite"/></ellipse>
+                <ellipse cx="161" cy="50" rx="3" ry="4" fill="#ffab40"><animate attributeName="ry" values="4;6;4" dur="0.7s" repeatCount="indefinite"/></ellipse>
+                <!-- 装饰 -->
+                <circle cx="75" cy="210" r="4" fill="#f48fb1" opacity=".3"/><circle cx="225" cy="210" r="4" fill="#f48fb1" opacity=".3"/>
+                <circle cx="150" cy="110" r="3" fill="#fff" opacity=".6"/>
+            </svg>
+        </div>
+        <div class="arrow" onclick="nextPage()"></div>
+    </div>
+
+    <!-- 第2页：员工信息 -->
+    <div class="page page-2" id="page2" style="background:linear-gradient(160deg,#fff0f5 0%,#ffe0e6 50%,#fff8e1 100%)">
+        <div class="info-card">
+            <div class="card-label anim-item anim-d1">HAPPY BIRTHDAY</div>
+            <div class="card-name anim-item anim-d2">{{name}}</div>
+            <div class="card-dept anim-item anim-d3">{{department}} · {{position}}</div>
+            <div class="card-divider anim-item anim-d4"></div>
+            <div class="card-details">
+                <div class="card-row anim-item anim-d4"><span class="icon">🎂</span> 生日：{{birthday}}</div>
+            </div>
+        </div>
+        <div class="arrow" onclick="nextPage()"></div>
+    </div>
+
+    <!-- 第3页：祝福语 -->
+    <div class="page page-3" id="page3" style="background:linear-gradient(160deg,#fff8e1 0%,#ffecb3 50%,#fff3e0 100%)">
+        <div class="bless-card">
+            <div class="card-label anim-item anim-d1">BIRTHDAY WISHES</div>
+            <div class="bless-title anim-item anim-d2">生日祝福</div>
+            <!-- editable-start -->
+            <div class="bless-text anim-item anim-d3">{{blessing}}</div>
+            <!-- editable-end -->
+            <div class="bless-footer">
+                <div class="bless-sign anim-item anim-d4">{{sender}} 敬上</div>
+                <div class="bless-date anim-item anim-d5">{{year}}年{{month}}月{{day}}日</div>
+            </div>
+        </div>
+        <div class="arrow" onclick="nextPage()"></div>
+    </div>
+
+    <!-- 第4页：尾封 - 小蛋糕 -->
+    <div class="page page-4" id="page4">
+        <div class="back-cake-scene">
+            <svg class="back-cake-svg" viewBox="0 0 200 200">
+                <defs>
+                    <linearGradient id="b1" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#ffe0ec"/><stop offset="100%" stop-color="#f8bbd0"/></linearGradient>
+                    <linearGradient id="bB2" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#fff3e0"/><stop offset="100%" stop-color="#ffcc80"/></linearGradient>
+                </defs>
+                <ellipse cx="100" cy="170" rx="70" ry="12" fill="rgba(233,30,99,0.05)"/>
+                <ellipse cx="100" cy="167" rx="65" ry="10" fill="url(#b1)"/>
+                <rect x="50" y="125" width="100" height="40" rx="12" fill="url(#b1)"/>
+                <rect x="65" y="90" width="70" height="35" rx="10" fill="url(#bB2)"/>
+                <rect x="90" y="62" width="6" height="28" rx="3" fill="#ffe082"/>
+                <ellipse cx="93" cy="57" rx="4" ry="7" fill="#ff8a65" opacity=".8"><animate attributeName="ry" values="7;9;7" dur="0.8s" repeatCount="indefinite"/></ellipse>
+                <ellipse cx="93" cy="55" rx="2" ry="4" fill="#ffab40"><animate attributeName="ry" values="4;6;4" dur="0.6s" repeatCount="indefinite"/></ellipse>
+                <circle cx="80" cy="120" r="4" fill="#fff" opacity=".5"/><circle cx="100" cy="120" r="4" fill="#fff" opacity=".5"/><circle cx="120" cy="120" r="4" fill="#fff" opacity=".5"/>
+                <circle cx="100" cy="105" r="3" fill="#fff" opacity=".6"/>
+            </svg>
+        </div>
+        <div class="arrow" onclick="prevPage()" style="transform:translateX(-50%) rotate(135deg);animation:none;"></div>
+    </div>
+</div>
+<button class="music-btn" id="musicBtn">🎵</button>
+
+<script>
+let currentPage=0;const totalPages=4;const swiper=document.getElementById('swiper');const dots=document.querySelectorAll('.page-dot');
+function updateSlide(){swiper.style.transform=`translateY(-${currentPage*100}vh)`;dots.forEach((d,i)=>d.classList.toggle('active',i===currentPage));triggerAnim(currentPage)}
+function nextPage(){if(currentPage<totalPages-1){currentPage++;updateSlide();burstPage()}}
+function prevPage(){if(currentPage>0){currentPage--;updateSlide()}}
+let tSY=0;document.addEventListener('touchstart',e=>{tSY=e.touches[0].clientY},{passive:true});
+document.addEventListener('touchend',e=>{const d=tSY-e.changedTouches[0].clientY;if(d>45)nextPage();else if(d<-45)prevPage()});
+let wheelLock=false;document.addEventListener('wheel',e=>{e.preventDefault();if(wheelLock)return;wheelLock=true;if(e.deltaY>0)nextPage();else prevPage();setTimeout(()=>wheelLock=false,850)},{passive:false});
+document.addEventListener('keydown',e=>{if(e.key==='ArrowDown'||e.key===' '){e.preventDefault();nextPage()}if(e.key==='ArrowUp'){e.preventDefault();prevPage()}});
+
+function triggerAnim(idx){const el=document.getElementById('page'+(idx+1));if(!el)return;const items=el.querySelectorAll('.anim-item');items.forEach(i=>i.classList.remove('visible'));void el.offsetWidth;items.forEach(i=>setTimeout(()=>i.classList.add('visible'),80))}
+
+// Canvas - 粉色花瓣雨
+(function(){const c=document.getElementById('bgCanvas');const ctx=c.getContext('2d');let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}window.addEventListener('resize',resize);resize();
+const petals=[];const pColors=['#f48fb1','#f06292','#ec407a','#fce4ec','#ff80ab','#ff4081','#ce93d8','#ba68c8'];
+for(let i=0;i<25;i++){petals.push({x:Math.random()*W,y:Math.random()*H-H,r:Math.random()*8+4,vx:(Math.random()-0.5)*0.5,vy:Math.random()*0.8+0.3,rot:Math.random()*360,rotV:(Math.random()-0.5)*2,alpha:Math.random()*0.25+0.08,color:pColors[Math.floor(Math.random()*pColors.length)]})}
+function loop(){requestAnimationFrame(loop);ctx.clearRect(0,0,W,H);petals.forEach(p=>{p.x+=p.vx+Math.sin(p.rot*0.01)*0.3;p.y+=p.vy;p.rot+=p.rotV;if(p.y>H+10){p.y=-10;p.x=Math.random()*W}if(p.x<-10)p.x=W+10;if(p.x>W+10)p.x=-10;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);ctx.globalAlpha=p.alpha;ctx.fillStyle=p.color;ctx.beginPath();ctx.ellipse(0,0,p.r,p.r*0.6,0,0,Math.PI*2);ctx.fill();ctx.restore()})}loop()})();
+
+(function(){const c=document.getElementById('floatItems');const items=['🌸','🎀','💕','✨','🍰','🧁','💖','🌷'];for(let i=0;i<12;i++){const s=document.createElement('span');s.className='float-item';s.textContent=items[Math.floor(Math.random()*items.length)];s.style.cssText=`left:${Math.random()*95}%;bottom:-30px;font-size:${12+Math.random()*14}px;--dur:${6+Math.random()*8}s;--delay:${Math.random()*12}s;--rot:${Math.random()*40-20}deg;`;c.appendChild(s)}})();
+
+function burstPage(){const el=document.getElementById('page'+(currentPage+1));if(!el)return;const b=document.createElement('div');b.className='particle-burst';b.style.left='50%';b.style.top='50%';const cs=['#f48fb1','#f06292','#ff80ab','#ffcc80','#ff8a65'];for(let i=0;i<22;i++){const d=document.createElement('div');d.className='burst-dot';const a=(Math.PI*2/22)*i,dist=35+Math.random()*70;d.style.cssText=`width:5px;height:5px;background:${cs[Math.floor(Math.random()*cs.length)]};--bx:${Math.cos(a)*dist}px;--by:${Math.sin(a)*dist}px;--bdur:${0.5+Math.random()*0.6}s;--bdelay:${Math.random()*0.12}s;`;b.appendChild(d)}el.appendChild(b);setTimeout(()=>b.remove(),1800)}
+
+document.addEventListener('click',function(e){if(e.target.closest('.music-btn')||e.target.closest('.arrow')||e.target.closest('.page-dot'))return;const cx=e.clientX,cy=e.clientY;const el=document.getElementById('page'+(currentPage+1));const b=document.createElement('div');b.className='particle-burst';b.style.left=cx+'px';b.style.top=cy+'px';const cs=['#f48fb1','#f06292','#ffcc80','#ff8a65','#ce93d8'];for(let i=0;i<14;i++){const d=document.createElement('div');d.className='burst-dot';const a=(Math.PI*2/14)*i,dist=20+Math.random()*50;d.style.cssText=`width:4px;height:4px;background:${cs[Math.floor(Math.random()*cs.length)]};--bx:${Math.cos(a)*dist}px;--by:${Math.sin(a)*dist}px;--bdur:${0.4+Math.random()*0.4}s;--bdelay:0s;`;b.appendChild(d)}el.appendChild(b);setTimeout(()=>b.remove(),1200)});
+
+(function(){let ac=null,playing=false,timer=null;const B=0.42;
+const melody=[{f:262,t:0,d:B*.75},{f:262,t:B*.75,d:B*.25},{f:294,t:B*1,d:B},{f:262,t:B*2,d:B},{f:349,t:B*3,d:B},{f:330,t:B*4,d:B*2},{f:262,t:B*6,d:B*.75},{f:262,t:B*6.75,d:B*.25},{f:294,t:B*7,d:B},{f:262,t:B*8,d:B},{f:392,t:B*9,d:B},{f:349,t:B*10,d:B*2},{f:262,t:B*12,d:B*.75},{f:262,t:B*12.75,d:B*.25},{f:523,t:B*13,d:B},{f:440,t:B*14,d:B},{f:349,t:B*15,d:B},{f:330,t:B*16,d:B},{f:294,t:B*17,d:B*2},{f:349,t:B*19,d:B*.75},{f:349,t:B*19.75,d:B*.25},{f:440,t:B*20,d:B},{f:349,t:B*21,d:B},{f:392,t:B*22,d:B},{f:349,t:B*23,d:B*2}];
+const bass=[{f:131,t:0,d:B*2},{f:175,t:B*2,d:B*2},{f:131,t:B*4,d:B*2},{f:131,t:B*6,d:B*2},{f:175,t:B*8,d:B*2},{f:131,t:B*10,d:B*2},{f:131,t:B*12,d:B*2},{f:175,t:B*14,d:B*2},{f:131,t:B*16,d:B*2},{f:131,t:B*18,d:B},{f:175,t:B*19,d:B*2},{f:131,t:B*21,d:B*2},{f:131,t:B*23,d:B*2}];
+const LOOP=B*25.5;
+function box(f,t,dur,vol){const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+0.012);g.gain.exponentialRampToValueAtTime(vol*0.3,t+dur*0.4);g.gain.exponentialRampToValueAtTime(0.001,t+dur);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+dur+0.01)}
+function bassN(f,t,dur,vol){const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+0.03);g.gain.setValueAtTime(vol,t+dur*0.7);g.gain.linearRampToValueAtTime(0,t+dur);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+dur+0.01)}
+function playLoop(){if(!ac)return;const t0=ac.currentTime+0.05;melody.forEach(n=>box(n.f,t0+n.t,n.d,0.07));bass.forEach(n=>bassN(n.f,t0+n.t,n.d,0.02));timer=setTimeout(playLoop,LOOP*1000)}
+const btn=document.getElementById('musicBtn');function start(){if(playing)return;if(!ac)ac=new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();playing=true;btn.classList.add('playing');btn.textContent='🎶';playLoop()}
+function stop(){if(!playing)return;if(timer)clearTimeout(timer);if(ac){ac.close();ac=null}playing=false;btn.classList.remove('playing');btn.textContent='🔇'}
+btn.addEventListener('click',e=>{e.stopPropagation();if(playing)stop();else start()});
+function tryAuto(){try{ac=new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='running'){playing=true;btn.classList.add('playing');btn.textContent='🎶';playLoop();return true}else{ac.close();ac=null;return false}}catch(e){return false}}
+if(!tryAuto()){const evts=['click','touchstart','keydown'];function onFirst(){start();evts.forEach(ev=>document.removeEventListener(ev,onFirst,true))}evts.forEach(ev=>document.addEventListener(ev,onFirst,{once:true,capture:true}))}
+})();
+</script>
+</body>
+</html>

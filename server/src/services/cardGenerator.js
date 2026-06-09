@@ -36,20 +36,39 @@ export const generateCard = async (template, employee) => {
       `生日快乐！愿你心想事成，万事如意！`
     ][Math.floor(Math.random() * 4)];
 
+    // 当前日期信息
+    const now = new Date();
+
+    // 条件性生成部门/职位行：空值时不显示
+    const dept = employee.department || '';
+    const pos = employee.position || '';
+    let deptBlock = '';
+    if (dept || pos) {
+      const deptText = dept && pos ? `${dept} · ${pos}` : dept || pos;
+      deptBlock = `<div class="info-dept anim-item anim-d3">${deptText}</div>`;
+    }
+
     // 替换占位符
     const replacements = {
       '{{name}}': employee.name,
-      '{{department}}': employee.department || '',
-      '{{position}}': employee.position || '',
+      '{{deptBlock}}': deptBlock,
+      '{{department}}': dept,
+      '{{position}}': pos,
       '{{birthday}}': formatBirthday(employee.birthday),
       '{{sender}}': config.senderName || '公司工会',
       '{{blessing}}': blessing,
-      '{{year}}': new Date().getFullYear().toString()
+      '{{title}}': `${employee.name}的生日贺卡`,
+      '{{year}}': now.getFullYear().toString(),
+      '{{month}}': (now.getMonth() + 1).toString(),
+      '{{day}}': now.getDate().toString()
     };
 
     for (const [placeholder, value] of Object.entries(replacements)) {
       html = html.replaceAll(placeholder, value);
     }
+
+    // 后处理：移除仅含分隔符“·”的空部门/职位行（兼容未使用 deptBlock 占位符的模板）
+    html = html.replace(/<div\s[^>]*>\s*·\s*<\/div>/g, '');
 
     // 生成唯一ID
     const cardId = uuidv4();

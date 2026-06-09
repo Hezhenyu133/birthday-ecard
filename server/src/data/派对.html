@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🎉 欢乐派对 · 生日贺卡</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body, html { width: 100%; height: 100%; overflow: hidden; font-family: "PingFang SC","Microsoft YaHei", sans-serif; background: #f0f4ff; touch-action: none; color: #333; }
+
+    #bgCanvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+    .swiper-container { width: 100%; height: 100%; position: relative; z-index: 10; display: flex; flex-direction: column; transition: transform 0.85s cubic-bezier(0.22,1,0.36,1); }
+    .page { min-height: 100vh; width: 100%; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; padding: 24px; }
+
+    /* 每页不同彩色背景 */
+    .page-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); }
+    .page-2 { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 50%, #ffecd2 100%); }
+    .page-3 { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #ff9a9e 100%); }
+    .page-4 { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 50%, #f6d365 100%); }
+
+    /* 封面 - 彩色气球 */
+    .balloon-scene { position: relative; z-index: 5; width: 100%; height: min(60vh, 350px); display: grid; place-items: center; }
+    .balloon-cluster { position: relative; width: min(60vw, 280px); height: min(60vw, 280px); }
+    .balloon {
+        position: absolute; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+        animation: balloonBob var(--dur, 4s) var(--delay, 0s) ease-in-out infinite;
+    }
+    .balloon::after {
+        content: ""; position: absolute; bottom: -12px; left: 50%; width: 1px; height: 12px;
+        background: rgba(255,255,255,0.3); transform: translateX(-50%);
+    }
+    @keyframes balloonBob {
+        0%, 100% { transform: translateY(0) rotate(var(--rot, -3deg)); }
+        50% { transform: translateY(-14px) rotate(calc(var(--rot, -3deg) * -1)); }
+    }
+
+    /* 帽子 */
+    .party-hat {
+        position: absolute; top: 10%; left: 50%; transform: translateX(-50%);
+        font-size: clamp(50px, 12vw, 80px);
+        animation: hatWiggle 2s ease-in-out infinite;
+        filter: drop-shadow(0 6px 15px rgba(0,0,0,0.15));
+        z-index: 6;
+    }
+    @keyframes hatWiggle {
+        0%, 100% { transform: translateX(-50%) rotate(-5deg); }
+        50% { transform: translateX(-50%) rotate(5deg); }
+    }
+
+    /* 彩带装饰 */
+    .confetti-string {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4;
+        overflow: hidden;
+    }
+    .confetti-piece {
+        position: absolute; width: 8px; height: 14px; opacity: 0;
+        animation: confettiFall var(--dur, 5s) var(--delay, 0s) linear infinite;
+    }
+    @keyframes confettiFall {
+        0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+        10% { opacity: 0.8; }
+        90% { opacity: 0.8; }
+        100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* 卡片 */
+    .info-card, .bless-card {
+        width: 88%; max-width: 420px; position: relative; z-index: 5;
+        background: rgba(255,255,255,0.92); backdrop-filter: blur(18px);
+        border-radius: 24px; padding: 38px 28px; text-align: center;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+        overflow-y: auto; max-height: 85vh; -webkit-overflow-scrolling: touch;
+    }
+    .info-card { border: 2px solid rgba(255,255,255,0.5); animation: cardPop 0.9s cubic-bezier(0.16,1,0.3,1) both; }
+    .bless-card { border: 2px solid rgba(255,200,100,0.2); animation: cardPop 0.9s cubic-bezier(0.16,1,0.3,1) both; }
+    @keyframes cardPop { 0%{opacity:0;transform:translateY(35px) scale(0.9)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+
+    .card-label { font-size: 11px; color: #7c4dff; letter-spacing: 5px; text-transform: uppercase; margin-bottom: 6px; }
+    .card-name { font-size: clamp(26px,7vw,38px); font-weight: 700; color: #4a148c; letter-spacing: 4px; margin-bottom: 6px; }
+    .card-dept { font-size: clamp(12px,2.5vw,15px); color: #7c4dff; letter-spacing: 2px; margin-bottom: 20px; }
+    .card-divider { width: 50px; height: 3px; margin: 0 auto 20px; border-radius: 2px; background: linear-gradient(90deg, #7c4dff, #f06292); }
+    .card-details { display: flex; flex-direction: column; gap: 10px; }
+    .card-row { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: clamp(13px,3vw,15px); color: #444; padding: 8px 14px; border-radius: 10px; background: rgba(124,77,255,0.04); }
+    .card-row .icon { font-size: 16px; }
+
+    .bless-title { font-size: clamp(18px,4.5vw,24px); font-weight: 600; color: #e65100; letter-spacing: 3px; margin-bottom: 20px; }
+    .bless-text { text-align: left; font-size: clamp(14px,3.2vw,16px); line-height: 1.9; color: #444; text-indent: 2em; white-space: pre-wrap; margin-bottom: 22px; }
+    .bless-footer { border-top: 2px dashed rgba(255,152,0,0.15); padding-top: 16px; display: flex; flex-direction: column; gap: 4px; }
+    .bless-sign { font-size: 14px; color: #666; letter-spacing: 2px; }
+    .bless-date { font-size: 12px; color: #999; letter-spacing: 1px; }
+
+    /* 入场动画 */
+    .anim-item { opacity: 0; transform: translateY(28px); transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1); }
+    .anim-item.visible { opacity: 1; transform: translateY(0); }
+    .anim-d1 { transition-delay: 0.1s; }
+    .anim-d2 { transition-delay: 0.2s; }
+    .anim-d3 { transition-delay: 0.3s; }
+    .anim-d4 { transition-delay: 0.4s; }
+    .anim-d5 { transition-delay: 0.5s; }
+    .anim-d6 { transition-delay: 0.6s; }
+
+    /* 尾封 - 更多气球 + 彩带 */
+    .back-balloons { position: relative; z-index: 5; width: 100%; height: min(50vh, 280px); display: grid; place-items: center; }
+    .back-cluster { position: relative; width: min(65vw, 300px); height: min(50vw, 220px); }
+
+    .arrow { position: absolute; bottom: 26px; left: 50%; width: 22px; height: 22px; border-right: 2.5px solid rgba(255,255,255,0.5); border-bottom: 2.5px solid rgba(255,255,255,0.5); transform: translateX(-50%) rotate(45deg); animation: arrowBounce 1.8s ease-in-out infinite; cursor: pointer; z-index: 20; opacity: 0.5; }
+    @keyframes arrowBounce { 0%,100%{transform:translateX(-50%) rotate(45deg) translateY(0);opacity:0.3} 50%{transform:translateX(-50%) rotate(45deg) translateY(-10px);opacity:0.7} }
+
+    .page-dots { position: fixed; right: 14px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 50; }
+    .page-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: all 0.4s; }
+    .page-dot.active { background: #fff; box-shadow: 0 0 8px rgba(255,255,255,0.5); transform: scale(1.4); }
+
+    .music-btn { position: fixed; top: 16px; right: 16px; z-index: 100; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); border: 1.5px solid rgba(255,255,255,0.25); display: grid; place-items: center; cursor: pointer; font-size: 17px; color: #fff; transition: all 0.3s; }
+    .music-btn.playing { animation: musicSpin 3s linear infinite; }
+    @keyframes musicSpin { to { transform: rotate(360deg); } }
+
+    .particle-burst { position: absolute; pointer-events: none; z-index: 5; }
+    .burst-dot { position: absolute; border-radius: 50%; opacity: 0; animation: burstFly var(--bdur,1s) var(--bdelay,0s) ease-out forwards; }
+    @keyframes burstFly { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(var(--bx,50px),var(--by,-60px)) scale(0);opacity:0} }
+
+    @media(max-width:420px){.info-card,.bless-card{padding:30px 20px}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important}}
+
+</style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+<div class="page-dots" id="pageDots"><div class="page-dot active"></div><div class="page-dot"></div><div class="page-dot"></div><div class="page-dot"></div></div>
+
+<div class="swiper-container" id="swiper">
+    <!-- 第1页：封面 - 气球派对 -->
+    <div class="page page-1" id="page1">
+        <div class="confetti-string" id="confetti1"></div>
+        <div class="balloon-scene">
+            <div class="balloon-cluster">
+                <div class="party-hat">🎩</div>
+                <div class="balloon" style="width:70px;height:85px;background:#e91e63;top:20%;left:5%;--rot:-5deg;--dur:3.8s;--delay:0s;"></div>
+                <div class="balloon" style="width:60px;height:75px;background:#7c4dff;top:10%;left:35%;--rot:3deg;--dur:4.2s;--delay:0.5s;"></div>
+                <div class="balloon" style="width:65px;height:80px;background:#00bcd4;top:15%;right:5%;--rot:-4deg;--dur:3.5s;--delay:1s;"></div>
+                <div class="balloon" style="width:55px;height:68px;background:#ff9800;top:40%;left:10%;--rot:6deg;--dur:4.5s;--delay:0.3s;"></div>
+                <div class="balloon" style="width:58px;height:72px;background:#4caf50;top:35%;right:12%;--rot:-3deg;--dur:4s;--delay:0.8s;"></div>
+                <div class="balloon" style="width:50px;height:62px;background:#ffc107;top:55%;left:25%;--rot:4deg;--dur:3.6s;--delay:1.2s;"></div>
+                <div class="balloon" style="width:48px;height:58px;background:#f44336;top:50%;right:25%;--rot:-6deg;--dur:4.3s;--delay:0.6s;"></div>
+            </div>
+        </div>
+        <div class="arrow" onclick="nextPage()"></div>
+    </div>
+
+    <!-- 第2页：员工信息 -->
+    <div class="page page-2" id="page2">
+        <div class="info-card">
+            <div class="card-label anim-item anim-d1">HAPPY BIRTHDAY</div>
+            <div class="card-name anim-item anim-d2">{{name}}</div>
+            <div class="card-dept anim-item anim-d3">{{department}} · {{position}}</div>
+            <div class="card-divider anim-item anim-d4"></div>
+            <div class="card-details">
+                <div class="card-row anim-item anim-d4"><span class="icon">🎂</span> 生日：{{birthday}}</div>
+            </div>
+        </div>
+        <div class="arrow" onclick="nextPage()"></div>
+    </div>
+
+    <!-- 第3页：祝福语 -->
+    <div class="page page-3" id="page3">
+        <div class="bless-card">
+            <div class="card-label anim-item anim-d1">BIRTHDAY WISHES</div>
+            <div class="bless-title anim-item anim-d2">生日祝福</div>
+            <!-- editable-start -->
+            <div class="bless-text anim-item anim-d3">{{blessing}}</div>
+            <!-- editable-end -->
+            <div class="bless-footer">
+                <div class="bless-sign anim-item anim-d4">{{sender}} 敬上</div>
+                <div class="bless-date anim-item anim-d5">{{year}}年{{month}}月{{day}}日</div>
+            </div>
+        </div>
+        <div class="arrow" onclick="nextPage()"></div>
+    </div>
+
+    <!-- 第4页：尾封 - 气球海洋 -->
+    <div class="page page-4" id="page4">
+        <div class="confetti-string" id="confetti2"></div>
+        <div class="back-balloons">
+            <div class="back-cluster">
+                <div class="balloon" style="width:65px;height:78px;background:#e91e63;top:5%;left:0%;--rot:-6deg;--dur:3.5s;--delay:0s;"></div>
+                <div class="balloon" style="width:58px;height:70px;background:#ff9800;top:0%;left:30%;--rot:4deg;--dur:4s;--delay:0.4s;"></div>
+                <div class="balloon" style="width:62px;height:74px;background:#4caf50;top:8%;right:0%;--rot:-3deg;--dur:3.8s;--delay:0.9s;"></div>
+                <div class="balloon" style="width:52px;height:64px;background:#00bcd4;top:30%;left:5%;--rot:5deg;--dur:4.2s;--delay:0.2s;"></div>
+                <div class="balloon" style="width:55px;height:67px;background:#7c4dff;top:25%;right:5%;--rot:-5deg;--dur:3.6s;--delay:0.7s;"></div>
+                <div class="balloon" style="width:48px;height:58px;background:#ffc107;top:50%;left:15%;--rot:3deg;--dur:4.5s;--delay:1.1s;"></div>
+                <div class="balloon" style="width:50px;height:62px;background:#f44336;top:45%;right:15%;--rot:-4deg;--dur:3.9s;--delay:0.5s;"></div>
+                <div class="balloon" style="width:42px;height:52px;background:#8bc34a;top:65%;left:30%;--rot:6deg;--dur:4.3s;--delay:1.3s;"></div>
+                <div class="balloon" style="width:45px;height:55px;background:#ff5722;top:60%;right:30%;--rot:-3deg;--dur:3.7s;--delay:0.8s;"></div>
+            </div>
+        </div>
+        <div class="arrow" onclick="prevPage()" style="transform:translateX(-50%) rotate(135deg);animation:none;"></div>
+    </div>
+</div>
+<button class="music-btn" id="musicBtn">🎵</button>
+
+<script>
+let currentPage=0;const totalPages=4;const swiper=document.getElementById('swiper');const dots=document.querySelectorAll('.page-dot');
+function updateSlide(){swiper.style.transform=`translateY(-${currentPage*100}vh)`;dots.forEach((d,i)=>d.classList.toggle('active',i===currentPage));triggerAnim(currentPage)}
+function nextPage(){if(currentPage<totalPages-1){currentPage++;updateSlide();burstPage()}}
+function prevPage(){if(currentPage>0){currentPage--;updateSlide()}}
+let tSY=0;document.addEventListener('touchstart',e=>{tSY=e.touches[0].clientY},{passive:true});
+document.addEventListener('touchend',e=>{const d=tSY-e.changedTouches[0].clientY;if(d>45)nextPage();else if(d<-45)prevPage()});
+let wheelLock=false;document.addEventListener('wheel',e=>{e.preventDefault();if(wheelLock)return;wheelLock=true;if(e.deltaY>0)nextPage();else prevPage();setTimeout(()=>wheelLock=false,850)},{passive:false});
+document.addEventListener('keydown',e=>{if(e.key==='ArrowDown'||e.key===' '){e.preventDefault();nextPage()}if(e.key==='ArrowUp'){e.preventDefault();prevPage()}});
+
+function triggerAnim(idx){const el=document.getElementById('page'+(idx+1));if(!el)return;const items=el.querySelectorAll('.anim-item');items.forEach(i=>i.classList.remove('visible'));void el.offsetWidth;items.forEach(i=>setTimeout(()=>i.classList.add('visible'),80))}
+
+// Canvas - 彩色纸屑
+(function(){const c=document.getElementById('bgCanvas');const ctx=c.getContext('2d');let W,H;function resize(){W=c.width=innerWidth;H=c.height=innerHeight}window.addEventListener('resize',resize);resize();
+const confetti=[];const cs=['#e91e63','#7c4dff','#00bcd4','#ff9800','#4caf50','#ffc107','#f44336','#ff5722'];
+for(let i=0;i<50;i++){confetti.push({x:Math.random()*W,y:Math.random()*H-H,w:Math.random()*6+3,h:Math.random()*10+4,vx:(Math.random()-0.5)*0.8,vy:Math.random()*1.5+0.5,r:Math.random()*360,rv:(Math.random()-0.5)*4,a:Math.random()*0.4+0.15,color:cs[Math.floor(Math.random()*cs.length)]})}
+function loop(){requestAnimationFrame(loop);ctx.clearRect(0,0,W,H);confetti.forEach(c=>{c.x+=c.vx;c.y+=c.vy;c.r+=c.rv;if(c.y>H+10){c.y=-10;c.x=Math.random()*W}if(c.x<-10)c.x=W+10;if(c.x>W+10)c.x=-10;ctx.save();ctx.translate(c.x,c.y);ctx.rotate(c.r*Math.PI/180);ctx.globalAlpha=c.a;ctx.fillStyle=c.color;ctx.fillRect(-c.w/2,-c.h/2,c.w,c.h);ctx.restore()})}loop()})();
+
+// 彩带生成
+(function(){const colors=['#e91e63','#7c4dff','#00bcd4','#ff9800','#4caf50','#ffc107','#f44336','#ff5722'];
+['confetti1','confetti2'].forEach(id=>{const el=document.getElementById(id);if(!el)return;for(let i=0;i<20;i++){const p=document.createElement('div');p.className='confetti-piece';p.style.cssText=`left:${Math.random()*100}%;top:-20px;width:${6+Math.random()*6}px;height:${10+Math.random()*10}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>0.5?'50%':'2px'};--dur:${4+Math.random()*6}s;--delay:${Math.random()*8}s;`;el.appendChild(p)}})})();
+
+function burstPage(){const el=document.getElementById('page'+(currentPage+1));if(!el)return;const b=document.createElement('div');b.className='particle-burst';b.style.left='50%';b.style.top='50%';const cs=['#e91e63','#7c4dff','#00bcd4','#ff9800','#4caf50','#ffc107'];for(let i=0;i<26;i++){const d=document.createElement('div');d.className='burst-dot';const a=(Math.PI*2/26)*i,dist=40+Math.random()*85;d.style.cssText=`width:5px;height:5px;background:${cs[Math.floor(Math.random()*cs.length)]};--bx:${Math.cos(a)*dist}px;--by:${Math.sin(a)*dist}px;--bdur:${0.5+Math.random()*0.6}s;--bdelay:${Math.random()*0.12}s;`;b.appendChild(d)}el.appendChild(b);setTimeout(()=>b.remove(),1800)}
+
+document.addEventListener('click',function(e){if(e.target.closest('.music-btn')||e.target.closest('.arrow')||e.target.closest('.page-dot'))return;const cx=e.clientX,cy=e.clientY;const el=document.getElementById('page'+(currentPage+1));const b=document.createElement('div');b.className='particle-burst';b.style.left=cx+'px';b.style.top=cy+'px';const cs=['#e91e63','#7c4dff','#00bcd4','#ff9800','#4caf50','#ffc107'];for(let i=0;i<16;i++){const d=document.createElement('div');d.className='burst-dot';const a=(Math.PI*2/16)*i,dist=20+Math.random()*55;d.style.cssText=`width:4px;height:4px;background:${cs[Math.floor(Math.random()*cs.length)]};--bx:${Math.cos(a)*dist}px;--by:${Math.sin(a)*dist}px;--bdur:${0.4+Math.random()*0.4}s;--bdelay:0s;`;b.appendChild(d)}el.appendChild(b);setTimeout(()=>b.remove(),1200)});
+
+(function(){let ac=null,playing=false,timer=null;const B=0.42;
+const melody=[{f:262,t:0,d:B*.75},{f:262,t:B*.75,d:B*.25},{f:294,t:B*1,d:B},{f:262,t:B*2,d:B},{f:349,t:B*3,d:B},{f:330,t:B*4,d:B*2},{f:262,t:B*6,d:B*.75},{f:262,t:B*6.75,d:B*.25},{f:294,t:B*7,d:B},{f:262,t:B*8,d:B},{f:392,t:B*9,d:B},{f:349,t:B*10,d:B*2},{f:262,t:B*12,d:B*.75},{f:262,t:B*12.75,d:B*.25},{f:523,t:B*13,d:B},{f:440,t:B*14,d:B},{f:349,t:B*15,d:B},{f:330,t:B*16,d:B},{f:294,t:B*17,d:B*2},{f:349,t:B*19,d:B*.75},{f:349,t:B*19.75,d:B*.25},{f:440,t:B*20,d:B},{f:349,t:B*21,d:B},{f:392,t:B*22,d:B},{f:349,t:B*23,d:B*2}];
+const bass=[{f:131,t:0,d:B*2},{f:175,t:B*2,d:B*2},{f:131,t:B*4,d:B*2},{f:131,t:B*6,d:B*2},{f:175,t:B*8,d:B*2},{f:131,t:B*10,d:B*2},{f:131,t:B*12,d:B*2},{f:175,t:B*14,d:B*2},{f:131,t:B*16,d:B*2},{f:131,t:B*18,d:B},{f:175,t:B*19,d:B*2},{f:131,t:B*21,d:B*2},{f:131,t:B*23,d:B*2}];
+const LOOP=B*25.5;
+function box(f,t,dur,vol){const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+0.012);g.gain.exponentialRampToValueAtTime(vol*0.3,t+dur*0.4);g.gain.exponentialRampToValueAtTime(0.001,t+dur);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+dur+0.01)}
+function bassN(f,t,dur,vol){const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+0.03);g.gain.setValueAtTime(vol,t+dur*0.7);g.gain.linearRampToValueAtTime(0,t+dur);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+dur+0.01)}
+function playLoop(){if(!ac)return;const t0=ac.currentTime+0.05;melody.forEach(n=>box(n.f,t0+n.t,n.d,0.07));bass.forEach(n=>bassN(n.f,t0+n.t,n.d,0.02));timer=setTimeout(playLoop,LOOP*1000)}
+const btn=document.getElementById('musicBtn');function start(){if(playing)return;if(!ac)ac=new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();playing=true;btn.classList.add('playing');btn.textContent='🎶';playLoop()}
+function stop(){if(!playing)return;if(timer)clearTimeout(timer);if(ac){ac.close();ac=null}playing=false;btn.classList.remove('playing');btn.textContent='🔇'}
+btn.addEventListener('click',e=>{e.stopPropagation();if(playing)stop();else start()});
+function tryAuto(){try{ac=new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='running'){playing=true;btn.classList.add('playing');btn.textContent='🎶';playLoop();return true}else{ac.close();ac=null;return false}}catch(e){return false}}
+if(!tryAuto()){const evts=['click','touchstart','keydown'];function onFirst(){start();evts.forEach(ev=>document.removeEventListener(ev,onFirst,true))}evts.forEach(ev=>document.addEventListener(ev,onFirst,{once:true,capture:true}))}
+})();
+</script>
+</body>
+</html>

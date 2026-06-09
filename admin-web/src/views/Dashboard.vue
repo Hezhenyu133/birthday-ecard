@@ -109,6 +109,10 @@
           <el-icon><Picture /></el-icon>
           管理模板
         </el-button>
+        <el-button type="danger" @click="$router.push('/blessings')">
+          <el-icon><ChatDotRound /></el-icon>
+          祝福语管理
+        </el-button>
         <el-button type="info" @click="$router.push('/records')">
           <el-icon><Document /></el-icon>
           查看记录
@@ -121,7 +125,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { User, Star, CircleCheck, Message, Refresh, Plus, Upload, Picture, Document } from '@element-plus/icons-vue'
+import { User, Star, CircleCheck, Message, Refresh, Plus, Upload, Picture, Document, ChatDotRound } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getTodayBirthdayEmployees, getEmployeeList } from '@/api/employees'
 import { getRecordStats, getRecordList } from '@/api/records'

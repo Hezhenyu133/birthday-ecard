@@ -12,91 +12,73 @@ const DATA_DIR = path.join(__dirname, '..', 'data');
 // 已知模板清单：提供详细的元数据（名称、描述、匹配规则）
 // 如果文件在此清单中，使用清单中的元数据；否则自动从文件名生成
 const TEMPLATE_MANIFEST = [
-  // ── 简约版（按年龄段 + 性别） ──
+  // ── 4页全屏翻页贺卡模板 ──
   {
-    file: 'shanhu-female.html',
-    name: '珊瑚·青春女',
-    description: '珊瑚粉橘风格，适合18-30岁女性员工',
-    match_gender: 'female',
-    match_age_min: 18,
-    match_age_max: 30
-  },
-  {
-    file: 'qinglan-male.html',
-    name: '青蓝·青春男',
-    description: '青蓝科技风格，适合18-30岁男性员工',
-    match_gender: 'male',
-    match_age_min: 18,
-    match_age_max: 30
-  },
-  {
-    file: 'yinghua-female.html',
-    name: '樱花·轻熟女',
-    description: '粉红浪漫风格，适合31-45岁女性员工',
-    match_gender: 'female',
-    match_age_min: 31,
-    match_age_max: 45
-  },
-  {
-    file: 'tianlan-male.html',
-    name: '天蓝·轻熟男',
-    description: '天蓝清新风格，适合31-45岁男性员工',
-    match_gender: 'male',
-    match_age_min: 31,
-    match_age_max: 45
-  },
-  {
-    file: 'ziyun-female.html',
-    name: '紫韵·雅致女',
-    description: '紫色优雅风格，适合46-65岁女性员工',
-    match_gender: 'female',
-    match_age_min: 46,
-    match_age_max: 65
-  },
-  {
-    file: 'chenwen-male.html',
-    name: '沉稳·雅致男',
-    description: '深蓝沉稳风格，适合46-65岁男性员工',
-    match_gender: 'male',
-    match_age_min: 46,
-    match_age_max: 65
-  },
-  {
-    file: 'xiqing.html',
-    name: '喜庆·通用',
-    description: '金色喜庆风格，适合所有员工（兜底模板）',
+    file: '蛋糕.html',
+    name: '蛋糕',
+    description: '蛋糕主题贺卡，含蜡烛动画与许愿互动，温馨浪漫风格',
     match_gender: 'all'
   },
-  // ── 蛋糕版（含 SVG 蛋糕 + 蜡烛字母动画） ──
   {
-    file: 'fense-female.html',
-    name: '粉甜·女性',
-    description: '粉色浪漫蛋糕风格，适合女性员工',
+    file: '粉色.html',
+    name: '粉色',
+    description: '粉色浪漫主题贺卡，含玫瑰花瓣飘落与蛋糕动画，适合女性员工',
     match_gender: 'female'
   },
   {
-    file: 'lanse-male.html',
-    name: '蔚蓝·男性',
-    description: '蓝色简洁蛋糕风格，适合男性员工',
-    match_gender: 'male'
-  },
-  {
-    file: 'jinhui.html',
-    name: '金辉·通用',
-    description: '金色精致蛋糕风格，包含部门职位信息，适合所有员工',
+    file: '礼盒.html',
+    name: '礼盒',
+    description: '礼盒惊喜主题贺卡，含礼盒打开动画与彩带特效，喜庆大方',
     match_gender: 'all'
   },
-  // ── 邀请函 ──
   {
-    file: 'yaoqing.html',
-    name: '烟花邀请',
-    description: '烟花动画风格的生日邀请函（不含占位符）',
+    file: '派对.html',
+    name: '派对',
+    description: '生日派对主题贺卡，含气球海洋与庆祝彩带动画，活泼欢快',
+    match_gender: 'all'
+  },
+  {
+    file: '星光.html',
+    name: '星光',
+    description: '星光璀璨主题贺卡，含大星星闪烁与夜空动画，简约温馨',
+    match_gender: 'all'
+  },
+  {
+    file: '红礼盒.html',
+    name: '红礼盒',
+    description: '红金喜庆礼盒主题贺卡，中国风浓郁，适合重要节日与长辈',
+    match_gender: 'all'
+  },
+  {
+    file: '寿桃.html',
+    name: '寿桃',
+    description: '寿桃祝寿主题贺卡，传统中式寿宴风格，适合年长员工',
+    match_gender: 'all'
+  },
+  {
+    file: '烟花.html',
+    name: '烟花',
+    description: '烟花绚烂主题贺卡，含全屏烟花绽放动画，华丽喜庆',
+    match_gender: 'all'
+  },
+  {
+    file: '通用1.html',
+    name: '通用1',
+    description: '简约通用贺卡（风格一），清新淡雅，含蛋糕与祝福文字',
+    match_gender: 'all'
+  },
+  {
+    file: '通用2.html',
+    name: '通用2',
+    description: '华丽通用贺卡（风格二），金色装饰与烟花背景，高端大气',
     match_gender: 'all'
   }
 ];
 
 // 旧名称 → 新名称的映射（一次性数据库迁移，保持记录 ID 不变）
+// 保留历史迁移记录，确保旧数据库能正确过渡
 const NAME_MIGRATION = {
+  // 最早期的英文名称 → 中文名称
   '青年女性模板':        '珊瑚·青春女',
   '青年男性模板':        '青蓝·青春男',
   '壮年女性模板':        '樱花·轻熟女',
@@ -107,7 +89,13 @@ const NAME_MIGRATION = {
   '粉色女性模板':        '粉甜·女性',
   '蓝色男性模板':        '蔚蓝·男性',
   '金色通用模板(详细版)': '金辉·通用',
-  '生日邀请函模板':      '烟花邀请'
+  '生日邀请函模板':      '烟花邀请',
+  'mb2':                 '赛博风格',
+  'mb3':                 '缤纷派对',
+  'mb4':                 '经典邀请函',
+  'mb4shotao':           '简约邀请函',
+  'mb5lihe':             '礼盒邀请函',
+  'mb6yanhua':           '烟花邀请函'
 };
 
 /**

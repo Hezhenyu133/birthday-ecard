@@ -33,7 +33,21 @@ router.get('/', async (req, res) => {
       where.is_active = req.query.is_active === '1' || req.query.is_active === 'true';
     }
     const blessings = await Blessing.findAll({ where, order: [['created_at', 'DESC']] });
-    success(res, blessings);
+
+    // 为每条祝福语查询引用它的模板数量
+    const blessingsWithCount = await Promise.all(
+      blessings.map(async (blessing) => {
+        const templateCount = await Template.count({
+          where: { default_blessing_id: blessing.id }
+        });
+        return {
+          ...blessing.toJSON(),
+          template_count: templateCount
+        };
+      })
+    );
+
+    success(res, blessingsWithCount);
   } catch (err) {
     error(res, err.message);
   }

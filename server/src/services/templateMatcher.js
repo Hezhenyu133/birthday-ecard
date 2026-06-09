@@ -22,15 +22,21 @@ export const matchTemplate = async (employee) => {
     age--;
   }
 
-  // 3. 查找匹配的模板（按优先级排序）
+  // 3. 查找匹配的模板（按优先级排序：具体性别 > 通用）
   const templates = await Template.findAll({ 
     where: { is_active: true },
-    order: [['match_gender', 'ASC']], // 优先级：all > male > female
     include: [{ model: Blessing, as: 'default_blessing' }]
   });
 
+  // 按性别匹配度排序：具体性别优先于 'all'
+  const sortedTemplates = templates.sort((a, b) => {
+    const aMatch = a.match_gender === employee.gender ? 0 : (a.match_gender === 'all' ? 1 : 2);
+    const bMatch = b.match_gender === employee.gender ? 0 : (b.match_gender === 'all' ? 1 : 2);
+    return aMatch - bMatch;
+  });
+
   // 精确匹配：性别 + 年龄段
-  const exactMatch = templates.find(t =>
+  const exactMatch = sortedTemplates.find(t =>
     (t.match_gender === employee.gender || t.match_gender === 'all') &&
     (!t.match_age_min || age >= t.match_age_min) &&
     (!t.match_age_max || age <= t.match_age_max)
@@ -38,11 +44,11 @@ export const matchTemplate = async (employee) => {
   if (exactMatch) return exactMatch;
 
   // 宽松匹配：仅性别
-  const genderMatch = templates.find(t =>
+  const genderMatch = sortedTemplates.find(t =>
     t.match_gender === employee.gender || t.match_gender === 'all'
   );
   if (genderMatch) return genderMatch;
 
   // 兜底：返回第一个启用的通用模板
-  return templates.find(t => t.match_gender === 'all') || templates[0];
+  return sortedTemplates.find(t => t.match_gender === 'all') || sortedTemplates[0];
 };

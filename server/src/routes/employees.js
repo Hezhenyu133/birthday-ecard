@@ -9,6 +9,7 @@ import { authMiddleware } from '../middlewares/auth.js';
 import { parseEmployeeExcel, validateEmployee } from '../utils/excelParser.js';
 import { Op } from 'sequelize';
 import { sendBirthdayCard } from '../services/sendService.js';
+import { autoAssignTemplateToEmployee, pickRandomUniversalTemplate } from '../services/autoMatch.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -152,11 +153,39 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/employees - 新增员工
+// POST /api/employees - 新增员工（自动匹配通用模板）
 router.post('/', async (req, res) => {
   try {
     const employee = await Employee.create(sanitizeEmployeeInput(req.body));
+    // 若未手动指定模板，自动从通用模板中随机匹配
+    await autoAssignTemplateToEmployee(employee);
     success(res, employee, '添加成功');
+  } catch (err) {
+    error(res, err.message);
+  }
+});
+
+// POST /api/employees/backfill-templates - 回填：为所有未匹配模板的员工随机分配通用模板
+router.post('/backfill-templates', async (req, res) => {
+  try {
+    const unmatched = await Employee.findAll({
+      where: { default_template_id: null, is_active: true }
+    });
+
+    if (unmatched.length === 0) {
+      return success(res, { updated: 0 }, '所有员工均已匹配模板');
+    }
+
+    let updated = 0;
+    for (const emp of unmatched) {
+      const template = await pickRandomUniversalTemplate();
+      if (template) {
+        await emp.update({ default_template_id: template.id });
+        updated++;
+      }
+    }
+
+    success(res, { updated }, `已为 ${updated} 位员工补配模板`);
   } catch (err) {
     error(res, err.message);
   }
@@ -180,18 +209,19 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/employees/:id - 删除员工（软删除）
+// DELETE /api/employees/:id - 删除员工（硬删除）
 router.delete('/:id', async (req, res) => {
   try {
-    const [updated] = await Employee.update(
-      { is_active: false },
-      { where: { id: req.params.id } }
-    );
-
-    if (!updated) {
+    // 删除前先解除模板关联
+    const emp = await Employee.findByPk(req.params.id);
+    if (!emp) {
       return error(res, '员工不存在', 404);
     }
 
+    // 解除关联的发送记录（外键约束）
+    await SendRecord.destroy({ where: { employee_id: req.params.id } });
+
+    await Employee.destroy({ where: { id: req.params.id } });
     success(res, null, '删除成功');
   } catch (err) {
     error(res, err.message);
@@ -251,11 +281,44 @@ router.post('/import', upload.single('file'), async (req, res) => {
       });
     }
 
-    // 批量插入
+    // 检查重复手机号（手动检查，因为 phone 字段无唯一索引）
+    const duplicates = [];
+    for (let i = 0; i < employees.length; i++) {
+      const emp = employees[i];
+      const existing = await Employee.findOne({ where: { phone: emp.phone } });
+      if (existing) {
+        duplicates.push({ row: i + 2, phone: emp.phone, name: emp.name });
+      }
+    }
+
+    if (duplicates.length > 0) {
+      await fs.unlink(req.file.path);
+      return error(res, `发现重复手机号`, 400, {
+        total: employees.length,
+        duplicates
+      });
+    }
+
+    // 批量插入（已手动检查重复，移除 ignoreDuplicates）
     const result = await Employee.bulkCreate(
       employees,
-      { validate: true, ignoreDuplicates: true }
+      { validate: true }
     );
+
+    // 自动为未指定模板的新员工随机分配通用模板
+    let autoMatched = 0;
+    for (const emp of result) {
+      if (!emp.default_template_id) {
+        const template = await pickRandomUniversalTemplate();
+        if (template) {
+          await emp.update({ default_template_id: template.id });
+          autoMatched++;
+        }
+      }
+    }
+    if (autoMatched > 0) {
+      console.log(`[导入] 已为 ${autoMatched} 位新员工自动匹配通用模板`);
+    }
 
     // 删除临时文件
     await fs.unlink(req.file.path);
