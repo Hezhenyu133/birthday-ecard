@@ -6,7 +6,7 @@
 <title>🎂 员工生日贺卡</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body, html { width: 100%; height: 100%; overflow: hidden; font-family: "PingFang SC","Microsoft YaHei", sans-serif; background: #fefcf3; touch-action: none; color: #333; }
+    body, html { width: 100%; height: 100%; overflow: hidden; font-family: "PingFang SC","Microsoft YaHei", sans-serif; background: #fff9e6; touch-action: none; color: #333; }
 
     #bgCanvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 
@@ -96,16 +96,16 @@
     .page-2 {  }
     .info-card {
         width: 88%; max-width: 420px; position: relative; z-index: 5;
-        background: rgba(255,255,255,0.92);
+        background: rgba(255,255,255,0.15); /* 已改为 0.15 超高透明 */
         backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-        border: 1.5px solid rgba(255,183,77,0.25);
+        border: 1.5px solid rgba(255,183,77,0.35);
         border-radius: 24px; padding: 0; text-align: center;
-        box-shadow: 0 16px 50px rgba(0,0,0,0.06), 0 0 30px rgba(255,183,77,0.08);
+        box-shadow: 0 16px 50px rgba(0,0,0,0.06), 0 0 30px rgba(255,183,77,0.15);
         overflow: hidden;
     }
     .info-card::before {
         content: ""; position: absolute; inset: -1px; border-radius: 24px; pointer-events: none;
-        background: conic-gradient(from 0deg, transparent, rgba(255,183,77,0.22), transparent, rgba(255,215,64,0.16), transparent);
+        background: conic-gradient(from 0deg, transparent, rgba(255,183,77,0.3), transparent, rgba(255,215,64,0.25), transparent);
         z-index: -1; animation: borderSpin 8s linear infinite;
         mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
         mask-composite: exclude; -webkit-mask-composite: xor;
@@ -115,34 +115,34 @@
 
     .info-card-header {
         padding: 32px 32px 20px;
-        background: linear-gradient(135deg, rgba(255,183,77,0.1), rgba(255,215,64,0.06));
+        background: linear-gradient(135deg, rgba(255,183,77,0.15), rgba(255,215,64,0.1));
     }
     .info-avatar {
         width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 16px;
         background: linear-gradient(135deg, #ffd54f, #ffb74d);
         display: grid; place-items: center; font-size: 32px; color: #fff;
-        box-shadow: 0 8px 24px rgba(255,183,77,0.25);
+        box-shadow: 0 8px 24px rgba(255,183,77,0.35);
         position: relative;
     }
     .info-avatar::after {
         content: ""; position: absolute; inset: -5px; border-radius: 50%;
-        border: 2px solid rgba(255,183,77,0.2);
+        border: 2px solid rgba(255,183,77,0.3);
         animation: avatarRing 3s ease-in-out infinite;
     }
     @keyframes avatarRing {
-        0%, 100% { transform: scale(1); opacity: 0.5; }
-        50% { transform: scale(1.1); opacity: 0.2; }
+        0%, 100% { transform: scale(1); opacity: 0.6; }
+        50% { transform: scale(1.1); opacity: 0.3; }
     }
     .info-label {
-        font-size: 11px; color: #ffa726; letter-spacing: 5px; text-transform: uppercase;
+        font-size: 11px; color: #ff9800; letter-spacing: 5px; text-transform: uppercase;
         margin-bottom: 4px;
     }
     .info-name {
-        font-size: clamp(26px, 7vw, 38px); font-weight: 700; color: #e65100;
+        font-size: clamp(26px, 7vw, 38px); font-weight: 700; color: #f57c00;
         letter-spacing: 4px;
     }
     .info-dept {
-        font-size: clamp(12px, 2.5vw, 15px); color: #ff8f00; letter-spacing: 2px;
+        font-size: clamp(12px, 2.5vw, 15px); color: #f57c00; letter-spacing: 2px;
         padding: 6px 0 20px;
     }
     .info-card-body { padding: 0 32px 32px; max-height: 40vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -153,28 +153,28 @@
     .info-details { display: flex; flex-direction: column; gap: 14px; }
     .info-row {
         display: flex; align-items: center; justify-content: center; gap: 10px;
-        font-size: clamp(13px, 3vw, 15px); color: #555;
+        font-size: clamp(13px, 3vw, 15px); color: #444;
         padding: 8px 16px; border-radius: 10px;
-        background: rgba(255,183,77,0.06);
+        background: rgba(255,183,77,0.1);
         transition: background 0.3s;
     }
-    .info-row:hover { background: rgba(255,183,77,0.12); }
+    .info-row:hover { background: rgba(255,183,77,0.18); }
     .info-row .icon { font-size: 18px; }
 
     /* ===== 第3页：祝福语 ===== */
     .page-3 {  }
     .bless-card {
         width: 88%; max-width: 420px; position: relative; z-index: 5;
-        background: rgba(255,255,255,0.92);
+        background: rgba(255,255,255,0.15); /* 已改为 0.15 超高透明 */
         backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-        border: 1.5px solid rgba(255,183,77,0.2);
+        border: 1.5px solid rgba(255,183,77,0.3);
         border-radius: 24px; padding: 0; text-align: center;
-        box-shadow: 0 16px 50px rgba(0,0,0,0.06), 0 0 30px rgba(255,183,77,0.08);
+        box-shadow: 0 16px 50px rgba(0,0,0,0.06), 0 0 30px rgba(255,183,77,0.15);
         overflow: hidden;
     }
     .bless-card::before {
         content: ""; position: absolute; inset: -1px; border-radius: 24px; pointer-events: none;
-        background: conic-gradient(from 0deg, transparent, rgba(255,183,77,0.22), transparent, rgba(255,215,64,0.16), transparent);
+        background: conic-gradient(from 0deg, transparent, rgba(255,183,77,0.3), transparent, rgba(255,215,64,0.25), transparent);
         z-index: -1; animation: borderSpin 7s linear infinite;
         mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
         mask-composite: exclude; -webkit-mask-composite: xor;
@@ -182,28 +182,28 @@
     }
     .bless-card-header {
         padding: 28px 28px 18px;
-        background: linear-gradient(135deg, rgba(255,183,77,0.08), rgba(255,215,64,0.05));
+        background: linear-gradient(135deg, rgba(255,183,77,0.15), rgba(255,215,64,0.1));
     }
     .bless-header {
-        font-size: 11px; color: #ffa726; letter-spacing: 5px; text-transform: uppercase;
+        font-size: 11px; color: #ff9800; letter-spacing: 5px; text-transform: uppercase;
         margin-bottom: 4px;
     }
     .bless-title {
-        font-size: clamp(20px, 5vw, 28px); font-weight: 600; color: #e65100;
+        font-size: clamp(20px, 5vw, 28px); font-weight: 600; color: #f57c00;
         letter-spacing: 3px;
     }
     .bless-card-body { padding: 24px 28px; max-height: 42vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
     .bless-text {
         text-align: left; font-size: clamp(14px, 3.2vw, 16px); line-height: 1.9;
-        color: #5d4037; text-indent: 2em; white-space: pre-wrap;
+        color: #4e342e; text-indent: 2em; white-space: pre-wrap;
     }
     .bless-card-footer {
         padding: 18px 28px 28px;
-        border-top: 1px dashed rgba(255,183,77,0.25);
+        border-top: 1px dashed rgba(255,183,77,0.35);
         display: flex; flex-direction: column; gap: 4px;
     }
-    .bless-sign { font-size: 14px; color: #8d6e63; letter-spacing: 2px; }
-    .bless-date { font-size: 12px; color: #bcaaa4; letter-spacing: 1px; }
+    .bless-sign { font-size: 14px; color: #6d4c41; letter-spacing: 2px; }
+    .bless-date { font-size: 12px; color: #8d6e63; letter-spacing: 1px; }
 
     /* ===== 入场动画 ===== */
     .anim-item {
@@ -225,15 +225,15 @@
     /* ===== 箭头 ===== */
     .arrow {
         position: absolute; bottom: 26px; left: 50%; width: 24px; height: 24px;
-        border-right: 2.5px solid rgba(255,183,77,0.5);
-        border-bottom: 2.5px solid rgba(255,183,77,0.5);
+        border-right: 2.5px solid rgba(255,183,77,0.8);
+        border-bottom: 2.5px solid rgba(255,183,77,0.8);
         transform: translateX(-50%) rotate(45deg);
         animation: arrowBounce 1.8s ease-in-out infinite;
-        cursor: pointer; z-index: 20; opacity: 0.6;
+        cursor: pointer; z-index: 20; opacity: 0.9;
     }
     @keyframes arrowBounce {
-        0%, 100% { transform: translateX(-50%) rotate(45deg) translateY(0); opacity: 0.4; }
-        50% { transform: translateX(-50%) rotate(45deg) translateY(-10px); opacity: 0.8; }
+        0%, 100% { transform: translateX(-50%) rotate(45deg) translateY(0); opacity: 0.7; }
+        50% { transform: translateX(-50%) rotate(45deg) translateY(-10px); opacity: 1; }
     }
 
     /* ===== 翻页指示点 ===== */
@@ -243,10 +243,10 @@
     }
     .page-dot {
         width: 8px; height: 8px; border-radius: 50%;
-        background: rgba(255,183,77,0.25); transition: all 0.4s;
+        background: rgba(255,183,77,0.4); transition: all 0.4s;
     }
     .page-dot.active {
-        background: #ffb74d; box-shadow: 0 0 8px rgba(255,183,77,0.4);
+        background: #ffb74d; box-shadow: 0 0 8px rgba(255,183,77,0.6);
         transform: scale(1.4);
     }
 
@@ -254,12 +254,12 @@
     .music-btn {
         position: fixed; top: 16px; right: 16px; z-index: 100;
         width: 40px; height: 40px; border-radius: 50%;
-        background: rgba(255,255,255,0.85); backdrop-filter: blur(10px);
-        border: 1.5px solid rgba(255,183,77,0.25);
+        background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
+        border: 1.5px solid rgba(255,183,77,0.4);
         display: grid; place-items: center; cursor: pointer;
         font-size: 17px; color: #ffb74d; transition: all 0.3s;
     }
-    .music-btn:hover { background: rgba(255,183,77,0.15); transform: scale(1.1); }
+    .music-btn:hover { background: rgba(255,183,77,0.2); transform: scale(1.1); }
     .music-btn.playing { animation: musicSpin 3s linear infinite; }
     @keyframes musicSpin { to { transform: rotate(360deg); } }
 
@@ -282,8 +282,8 @@
     }
     @keyframes floatUp {
         0% { transform: translateY(0) rotate(0deg) scale(0.5); opacity: 0; }
-        12% { opacity: 0.6; transform: translateY(-15px) rotate(8deg) scale(1); }
-        88% { opacity: 0.6; }
+        12% { opacity: 0.8; transform: translateY(-15px) rotate(8deg) scale(1); }
+        88% { opacity: 0.8; }
         100% { transform: translateY(-105vh) rotate(var(--rot, 15deg)) scale(0.6); opacity: 0; }
     }
 
@@ -299,7 +299,8 @@
         *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
     }
 
-    .page::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: rgba(0,0,0,0.35); }
+    /* 移除黑色压暗遮罩，大幅提亮 */
+    .page::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: rgba(0,0,0,0); }
 </style>
 </head>
 <body>
@@ -319,12 +320,12 @@
 <div class="swiper-container" id="swiper">
 
     <!-- ===== 第1页：封面图 ===== -->
-    <div class="page page-1" id="page1" style="background-image: url('https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/32ae5ae6fb384a4ca074fb07d4f5951e.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202606051523475D6C6CE05A7F23007B18&rrcfp=dafada99&x-expires=2096868227&x-signature=pJcwvxMZ1Q%2FeQAWfBf4pkCCSUXw%3D');">
+    <div class="page page-1" id="page1" style="background-image: url('https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/bot-chat-image/b8e634fab6104ff8900febd840e3cbbd~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=20260610164120B9BBF7CB2646C4ED52A8&rrcfp=dafada99&x-expires=2097304881&x-signature=KqK3STdQg%2BxoQ5v82GIMdht0iEU%3D');">
         <div class="arrow" onclick="nextPage()"></div>
     </div>
 
     <!-- ===== 第2页：员工信息 ===== -->
-    <div class="page page-2" id="page2" style="background-image: url('https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/0e696f8e27104c37b47416a1cc967d87.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202606051544142E307C13AAB61F0FE643&rrcfp=dafada99&x-expires=2096869455&x-signature=KTzDuCIu010pf0omMPcu2EF%2BGW8%3D');">
+    <div class="page page-2" id="page2" style="background-image: url('https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/bot-chat-image/5a23960710754335bf8e06d89898f463~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=20260610164120B9BBF7CB2646C4ED52A8&rrcfp=dafada99&x-expires=2097304881&x-signature=zumlp51IZBZwTZR2gPs9sIcn7rU%3D');">
         <div class="info-card">
             <div class="info-card-header">
                 <div class="info-label anim-item anim-d1">HAPPY BIRTHDAY</div>
@@ -342,7 +343,7 @@
     </div>
 
     <!-- ===== 第3页：祝福语 ===== -->
-    <div class="page page-3" id="page3" style="background-image: url('https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/0e696f8e27104c37b47416a1cc967d87.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202606051544142E307C13AAB61F0FE643&rrcfp=dafada99&x-expires=2096869455&x-signature=KTzDuCIu010pf0omMPcu2EF%2BGW8%3D');">
+    <div class="page page-3" id="page3" style="background-image: url('https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/bot-chat-image/5a23960710754335bf8e06d89898f463~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=20260610164120B9BBF7CB2646C4ED52A8&rrcfp=dafada99&x-expires=2097304881&x-signature=zumlp51IZBZwTZR2gPs9sIcn7rU%3D');">
         <div class="bless-card">
             <div class="bless-card-header">
                 <div class="bless-header anim-item anim-d1">BIRTHDAY WISHES</div>
@@ -362,7 +363,7 @@
     </div>
 
     <!-- ===== 第4页：尾页图 ===== -->
-    <div class="page page-4" id="page4" style="background-image: url('https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/0e696f8e27104c37b47416a1cc967d87.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202606051544142E307C13AAB61F0FE643&rrcfp=dafada99&x-expires=2096869455&x-signature=KTzDuCIu010pf0omMPcu2EF%2BGW8%3D');">
+    <div class="page page-4" id="page4" style="background-image: url('https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/bot-chat-image/5a23960710754335bf8e06d89898f463~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=20260610164120B9BBF7CB2646C4ED52A8&rrcfp=dafada99&x-expires=2097304881&x-signature=zumlp51IZBZwTZR2gPs9sIcn7rU%3D');">
         <div class="arrow" onclick="prevPage()" style="transform:translateX(-50%) rotate(135deg);animation:none;"></div>
     </div>
 </div>
