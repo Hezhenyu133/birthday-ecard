@@ -24,6 +24,17 @@ const MIGRATIONS = [
     table: 'templates',
     column: 'default_blessing_id',
     sql: "ALTER TABLE templates ADD COLUMN default_blessing_id INT NULL"
+  },
+  // templates 表 html_content 列从 TEXT 升级为 MEDIUMTEXT（支持大型 HTML 模板）
+  {
+    table: 'templates',
+    column: 'html_content_mediumtext',
+    checkSql: `
+      SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_NAME = 'templates' AND COLUMN_NAME = 'html_content'
+      AND DATA_TYPE = 'mediumtext'
+    `,
+    sql: "ALTER TABLE templates MODIFY COLUMN html_content MEDIUMTEXT NOT NULL"
   }
 ];
 
@@ -32,19 +43,19 @@ const migrateDatabase = async () => {
 
   for (const migration of MIGRATIONS) {
     try {
-      // 检查列是否已存在
-      const [results] = await sequelize.query(`
+      // 支持自定义检查 SQL（如检查列类型），否则默认检查列是否存在
+      const checkSql = migration.checkSql || `
         SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE TABLE_NAME = ? AND COLUMN_NAME = ?
-      `, {
-        replacements: [migration.table, migration.column],
+        WHERE TABLE_NAME = '${migration.table}' AND COLUMN_NAME = '${migration.column}'
+      `;
+      const [results] = await sequelize.query(checkSql, {
         type: QueryTypes.SELECT
       });
 
       if (!results) {
         await sequelize.query(migration.sql);
         applied++;
-        console.log(`[迁移] 已添加列: ${migration.table}.${migration.column}`);
+        console.log(`[迁移] 已应用: ${migration.table} - ${migration.column}`);
       }
     } catch (err) {
       // 忽略错误（表不存在等情况）

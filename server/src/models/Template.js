@@ -28,7 +28,7 @@ const Template = sequelize.define('Template', {
     type: DataTypes.STRING(255)
   },
   html_content: {
-    type: DataTypes.TEXT,
+    type: DataTypes.TEXT('medium'),
     allowNull: false
   },
   default_blessing_id: {
