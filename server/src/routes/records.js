@@ -4,6 +4,9 @@ import { success, error } from '../utils/response.js';
 import { SendRecord, Employee, Template } from '../models/index.js';
 import { authMiddleware } from '../middlewares/auth.js';
 import { sendBirthdayCard } from '../services/sendService.js';
+import { config } from '../config/index.js';
+import fs from 'fs/promises';
+import path from 'path';
 
 const router = express.Router();
 
@@ -94,12 +97,14 @@ router.post('/test-send/:employeeId', async (req, res) => {
     }
 
     success(res, {
-      employee: result.employee.name,
-      template: result.template.name,
       cardUrl: result.cardUrl,
+      cardId: result.cardId,
+      messageId: result.messageId,
       smsStatus: result.smsStatus,
       smsProvider: result.smsProvider,
-      messageId: result.messageId,
+      smsContent: result.smsContent,
+      employeeName: result.employeeName,
+      templateName: result.templateName,
       smsError: result.error
     }, result.success ? '测试发送成功' : '贺卡生成成功，短信发送失败');
   } catch (err) {
@@ -107,13 +112,22 @@ router.post('/test-send/:employeeId', async (req, res) => {
   }
 });
 
-// DELETE /api/records/:id - 删除发送记录
+// DELETE /api/records/:id - 删除发送记录（同时清理磁盘贺卡文件）
 router.delete('/:id', async (req, res) => {
   try {
-    const deleted = await SendRecord.destroy({ where: { id: req.params.id } });
-    if (!deleted) {
+    // 先查出记录以获取 card_id，用于清理磁盘文件
+    const record = await SendRecord.findByPk(req.params.id);
+    if (!record) {
       return error(res, '记录不存在', 404);
     }
+
+    // 清理磁盘上的贺卡 HTML 文件
+    if (record.card_id) {
+      const filePath = path.join(config.cardsDir, `${record.card_id}.html`);
+      await fs.unlink(filePath).catch(() => {});
+    }
+
+    await record.destroy();
     success(res, null, '删除成功');
   } catch (err) {
     error(res, err.message);

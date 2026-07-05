@@ -17,6 +17,9 @@ import templateRoutes from './routes/templates.js';
 import blessingRoutes from './routes/blessings.js';
 import recordRoutes from './routes/records.js';
 import cardRoutes from './routes/card.js';
+import departmentRoutes from './routes/departments.js';
+import operationLogRoutes from './routes/operationLogs.js';
+import monitorRoutes from './routes/monitor.js';
 import initDefaultAdmin from './utils/initAdmin.js';
 import initDefaultTemplate from './utils/initDefaultTemplate.js';
 import { startBirthdayScheduler } from './services/scheduler.js';
@@ -40,8 +43,8 @@ async function ensureDirectories() {
 
 // 中间件
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 // 健康检查（无需认证）
 app.get('/api/health', (req, res) => {
@@ -54,6 +57,9 @@ app.use('/api/employees', employeeRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/blessings', blessingRoutes);
 app.use('/api/records', recordRoutes);
+app.use('/api/departments', departmentRoutes);
+app.use('/api/operation-logs', operationLogRoutes);
+app.use('/api/monitor', monitorRoutes);
 
 // 贺卡访问路由（无需认证）
 app.use('/card', cardRoutes);
@@ -67,12 +73,12 @@ const startServer = async () => {
     // 确保工作目录存在
     await ensureDirectories();
 
-    // 不使用alter或force,只同步不存在的表
+    // 迁移：先为已存在的表添加新增列（避免 sync 创建索引时列不存在）
+    await migrateDatabase();
+
+    // 同步表结构：创建尚不存在的表
     await sequelize.sync();
     console.log('[数据库] 连接成功');
-
-    // 迁移：确保已存在的表拥有新增列
-    await migrateDatabase();
 
     await initDefaultAdmin();
     await initDefaultTemplate();

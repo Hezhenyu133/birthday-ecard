@@ -28,6 +28,11 @@
             {{ formatAgeRange(row.match_age_min, row.match_age_max) }}
           </template>
         </el-table-column>
+        <el-table-column label="适用职级" width="120">
+          <template #default="{ row }">
+            {{ getLevelText(row.match_employee_level) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="is_active" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.is_active ? 'success' : 'info'">{{ row.is_active ? '启用' : '禁用' }}</el-tag>
@@ -75,6 +80,16 @@ const getGenderText = (gender?: string) => {
     all: '不限'
   }
   return map[gender || 'all'] || '不限'
+}
+
+const getLevelText = (level?: string | null) => {
+  const map: Record<string, string> = {
+    management: '管理层',
+    manager: '经理',
+    employee: '员工',
+    all: '通用'
+  }
+  return map[level || 'all'] || '通用'
 }
 
 const formatAgeRange = (min?: number | null, max?: number | null) => {

@@ -3,13 +3,15 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
-import { sequelize, Employee, Template, Blessing, SendRecord } from '../models/index.js';
+import { sequelize, Employee, Template, Blessing, SendRecord, Department } from '../models/index.js';
 import { success, error } from '../utils/response.js';
 import { authMiddleware } from '../middlewares/auth.js';
 import { parseEmployeeExcel, validateEmployee } from '../utils/excelParser.js';
 import { Op } from 'sequelize';
+import { logOperation, extractLogInfo } from '../middlewares/operationLog.js';
 import { sendBirthdayCard } from '../services/sendService.js';
 import { autoAssignTemplateToEmployee, pickRandomUniversalTemplate } from '../services/autoMatch.js';
+import { config } from '../config/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,7 +38,7 @@ const upload = multer({
 /**
  * 白名单过滤：防止mass assignment攻击
  */
-const EMPLOYEE_FIELDS = ['name', 'gender', 'birthday', 'phone', 'department', 'position', 'defaultTemplateId', 'default_template_id'];
+const EMPLOYEE_FIELDS = ['name', 'gender', 'birthday', 'phone', 'department', 'position', 'defaultTemplateId', 'default_template_id', 'department_id', 'department_code', 'level'];
 
 const sanitizeEmployeeInput = (obj) => {
   const sanitized = {};
@@ -51,19 +53,43 @@ const sanitizeEmployeeInput = (obj) => {
   return sanitized;
 };
 
+/**
+ * 递归获取部门及其所有子部门的 ID 列表
+ */
+const getDepartmentAndDescendantIds = async (deptId) => {
+  const ids = [deptId];
+  const children = await Department.findAll({
+    where: { parent_id: deptId },
+    attributes: ['id']
+  });
+  for (const child of children) {
+    const childIds = await getDepartmentAndDescendantIds(child.id);
+    ids.push(...childIds);
+  }
+  return ids;
+};
+
 // GET /api/employees - 获取员工列表（分页、搜索）
 router.get('/', async (req, res) => {
   try {
-    const { page = 1, pageSize = 20, keyword, department } = req.query;
+    const { page = 1, pageSize = 20, keyword, department, departmentId, level } = req.query;
     const offset = (page - 1) * pageSize;
 
     const where = { is_active: true };
-    
+
     if (keyword) {
       where[Op.or] = [
         { name: { [Op.like]: `%${keyword}%` } },
         { phone: { [Op.like]: `%${keyword}%` } }
       ];
+    }
+    if (departmentId) {
+      // 包含子部门：查询该部门及所有后代部门的员工
+      const deptIds = await getDepartmentAndDescendantIds(parseInt(departmentId));
+      where.department_id = { [Op.in]: deptIds };
+    }
+    if (level) {
+      where.level = level;
     }
     if (department) {
       where.department = department;
@@ -89,6 +115,9 @@ router.get('/', async (req, res) => {
       birthday: emp.birthday,
       phone: emp.phone,
       department: emp.department,
+      department_id: emp.department_id,
+      department_code: emp.department_code,
+      level: emp.level,
       position: emp.position,
       default_template_id: emp.default_template_id || null,
       defaultTemplateName: emp.default_template?.name || null
@@ -159,6 +188,8 @@ router.post('/', async (req, res) => {
     const employee = await Employee.create(sanitizeEmployeeInput(req.body));
     // 若未手动指定模板，自动从通用模板中随机匹配
     await autoAssignTemplateToEmployee(employee);
+    // 记录操作日志
+    logOperation({ ...extractLogInfo(req), action: 'create', model: 'Employee', model_id: employee.id, details: { name: employee.name } });
     success(res, employee, '添加成功');
   } catch (err) {
     error(res, err.message);
@@ -203,25 +234,35 @@ router.put('/:id', async (req, res) => {
       return error(res, '员工不存在', 404);
     }
 
+    logOperation({ ...extractLogInfo(req), action: 'update', model: 'Employee', model_id: parseInt(req.params.id), details: sanitizeEmployeeInput(req.body) });
     success(res, null, '修改成功');
   } catch (err) {
     error(res, err.message);
   }
 });
 
-// DELETE /api/employees/:id - 删除员工（硬删除）
+// DELETE /api/employees/:id - 删除员工（硬删除，级联清除发送记录和贺卡文件）
 router.delete('/:id', async (req, res) => {
   try {
-    // 删除前先解除模板关联
     const emp = await Employee.findByPk(req.params.id);
     if (!emp) {
       return error(res, '员工不存在', 404);
     }
 
-    // 解除关联的发送记录（外键约束）
+    // 清理磁盘上的贺卡 HTML 文件
+    const records = await SendRecord.findAll({ where: { employee_id: req.params.id }, attributes: ['card_id'] });
+    for (const record of records) {
+      if (record.card_id) {
+        const filePath = path.join(config.cardsDir, `${record.card_id}.html`);
+        await fs.unlink(filePath).catch(() => {});
+      }
+    }
+
+    // 级联删除发送记录
     await SendRecord.destroy({ where: { employee_id: req.params.id } });
 
     await Employee.destroy({ where: { id: req.params.id } });
+    logOperation({ ...extractLogInfo(req), action: 'delete', model: 'Employee', model_id: parseInt(req.params.id), details: { name: emp.name } });
     success(res, null, '删除成功');
   } catch (err) {
     error(res, err.message);
@@ -243,8 +284,12 @@ router.post('/:id/generate-card', async (req, res) => {
     success(res, {
       cardUrl: result.cardUrl,
       cardId: result.cardId,
+      messageId: result.messageId,
       smsStatus: result.smsStatus,
       smsProvider: result.smsProvider,
+      smsContent: result.smsContent,
+      employeeName: result.employeeName,
+      templateName: result.templateName,
       smsError: result.error
     }, result.success ? '贺卡生成并发送成功' : '贺卡生成成功，短信发送失败');
   } catch (err) {

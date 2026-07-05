@@ -24,15 +24,15 @@
           <el-sub-menu index="employees">
             <template #title>
               <el-icon><User /></el-icon>
-              <span>员工管理</span>
+              <span>人员管理</span>
             </template>
             <el-menu-item index="/employees">
               <el-icon><List /></el-icon>
-              <template #title>员工列表</template>
+              <template #title>人员列表</template>
             </el-menu-item>
             <el-menu-item index="/employees/add">
               <el-icon><Plus /></el-icon>
-              <template #title>添加员工</template>
+              <template #title>添加人员</template>
             </el-menu-item>
             <el-menu-item index="/employees/import">
               <el-icon><Upload /></el-icon>
@@ -53,6 +53,16 @@
           <el-menu-item index="/records">
             <el-icon><Document /></el-icon>
             <template #title>发送记录</template>
+          </el-menu-item>
+
+          <el-menu-item index="/operation-logs">
+            <el-icon><Notebook /></el-icon>
+            <template #title>操作日志</template>
+          </el-menu-item>
+
+          <el-menu-item index="/system-stats">
+            <el-icon><DataAnalysis /></el-icon>
+            <template #title>系统监控</template>
           </el-menu-item>
         </el-menu>
       </nav>
@@ -127,7 +137,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { 
   HomeFilled, 
@@ -138,13 +148,15 @@ import {
   Picture, 
   ChatDotRound,
   Document,
+  Notebook,
+  DataAnalysis,
   Fold,
   Expand,
   ArrowDown
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { changePassword } from '@/api/auth'
+import { changePassword, logout as logoutApi } from '@/api/auth'
 
 const router = useRouter()
 const route = useRoute()
@@ -245,6 +257,13 @@ const handleCommand = async (command: string) => {
           type: 'warning'
         })
         
+        // 调用后端登出接口，清除会话记录
+        try {
+          await logoutApi()
+        } catch {
+          // 即使后端接口失败，也清除本地状态
+        }
+
         userStore.clearAuth()
         ElMessage.success('已退出登录')
         router.push('/login')
@@ -254,6 +273,51 @@ const handleCommand = async (command: string) => {
       break
   }
 }
+
+// ========== 会话超时逻辑 ==========
+
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000 // 30 分钟
+const CHECK_INTERVAL_MS = 60 * 1000       // 每分钟检查一次
+
+let lastActivityTime = Date.now()
+let sessionCheckTimer: ReturnType<typeof setInterval> | null = null
+
+const updateActivityTime = () => {
+  lastActivityTime = Date.now()
+}
+
+const checkSessionTimeout = () => {
+  const elapsed = Date.now() - lastActivityTime
+  if (elapsed >= SESSION_TIMEOUT_MS) {
+    // 超时：清除认证状态并跳转登录页
+    ElMessage.warning('长时间未操作，会话已超时，请重新登录')
+    userStore.clearAuth()
+    router.push('/login')
+  }
+}
+
+onMounted(() => {
+  // 注册用户活动事件
+  window.addEventListener('mousemove', updateActivityTime)
+  window.addEventListener('keydown', updateActivityTime)
+  window.addEventListener('click', updateActivityTime)
+
+  // 启动定时检查器
+  sessionCheckTimer = setInterval(checkSessionTimeout, CHECK_INTERVAL_MS)
+})
+
+onUnmounted(() => {
+  // 清理事件监听器
+  window.removeEventListener('mousemove', updateActivityTime)
+  window.removeEventListener('keydown', updateActivityTime)
+  window.removeEventListener('click', updateActivityTime)
+
+  // 清除定时器
+  if (sessionCheckTimer) {
+    clearInterval(sessionCheckTimer)
+    sessionCheckTimer = null
+  }
+})
 </script>
 
 <style scoped>

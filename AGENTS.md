@@ -48,7 +48,7 @@ npm run build        # 生产构建
 | **README.md** | 项目简介、快速启动、文档索引 |
 | **生日贺卡项目开发文档.md** | 完整技术设计：架构、数据库、API、前端指南、生产部署 |
 | **项目指南.md** | 新手教程：环境准备、启动步骤、功能使用教程 |
-| **代码审查与优化总结报告.md** | 版本迭代记录：66 个问题的发现与修复详情（v1.0 ~ v3.2） |
+| **代码审查与优化总结报告.md** | 版本迭代记录：78 个问题的发现与修复详情（v1.0 ~ v3.5） |
 
 ## Git Workflow
 
@@ -63,10 +63,14 @@ npm run build        # 生产构建
 
 ### 模板系统
 - 贺卡模板使用 `<!-- editable-start -->` / `<!-- editable-end -->` 标记定义可编辑区域
-- 占位符：`{{name}}`、`{{department}}`、`{{position}}`、`{{birthday}}`、`{{sender}}`、`{{blessing}}`、`{{year}}`
-- `{{deptBlock}}` 是条件占位符，由后端根据部门/职位是否为空动态生成
-- 模板文件使用中文命名（如 蛋糕.html、星光.html），存放于 `uploads/4页/`
-- 模板自动入库：启动时扫描 `server/src/data/` 下所有 `.html` 文件并 upsert
+- 占位符完整清单：
+  - `{{name}}`、`{{department}}`、`{{position}}`、`{{birthday}}`、`{{sender}}`、`{{blessing}}` — 基础字段
+  - `{{company}}`（→ `COMPANY_NAME` 环境变量）、`{{logo_url}}`（→ `LOGO_URL` 环境变量）— 企业信息
+  - `{{year}}`、`{{month}}`、`{{day}}` — 日期字段
+  - `{{deptBlock}}` — 条件占位符，由后端根据部门/职位是否为空动态生成
+- 模板文件存放于 `server/src/data/`（11个），启动时自动 upsert 入库
+- `initDefaultTemplate.js` 内置 `TEMPLATE_MANIFEST` 清单，提供描述和匹配规则元数据
+- 通用3.html 架构特殊：4 screen（cover/wish/highlight/final）、Canvas 粒子特效、`<audio>` 元素 + base64 内嵌音乐/图片，与其他模板的 `.page` + `nextPage()` 架构不同
 
 ### 删除操作
 - 所有删除均为数据库硬删除（非软删除）
@@ -77,10 +81,16 @@ npm run build        # 生产构建
 ### SMS 服务
 - Provider 抽象模式：`mock`（开发）/ `carrier`（生产）
 - 内置指数退避重试机制
-- SendRecord 追踪字段：`message_id`、`sms_provider`、`retry_count`
+- SendRecord 追踪字段：`message_id`、`sms_provider`、`retry_count`、`sms_content`
+
+### 后端配置要点
+- `express.json()` 和 `express.urlencoded()` limit 设为 `'5mb'`（大型模板含 base64 资源可达 1.4MB）
+- Axios 全局 timeout 设为 30000ms（大型模板加载需要更多时间）
 
 ### 前端规范
 - 模板编辑采用纯文本编辑模式（非 HTML 编辑）
+- **v-html 限制**：`TemplateEdit.vue` 右侧实时预览使用 `v-html` 渲染，不执行 `<script>` 标签。模板中的 JS 逻辑（如逗号断句 `formatBlessingText()`）需在 Vue 侧以字符串预处理方式模拟（`formatBlessingForPreview()`）
+- 祝福语断句规则：按中文逗号 `，` 和分号 `；` 拆分，每段包 `<span class="comma-line" style="display:block">`
 - 上传文件时不要手动设置 `Content-Type`，让浏览器自动处理 boundary
 - 路由守卫使用 Pinia Store 的 `useUserStore().getToken()` 判断登录状态
 - 响应拦截器需检测 `Content-Type: text/html`，模板预览接口返回 HTML

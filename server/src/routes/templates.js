@@ -4,8 +4,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { success, error } from '../utils/response.js';
 import { authMiddleware } from '../middlewares/auth.js';
-import { Template, Blessing, Employee } from '../models/index.js';
+import { Template, Blessing, Employee, SendRecord } from '../models/index.js';
 import { autoAssignBlessingToTemplate, pickRandomUniversalBlessing } from '../services/autoMatch.js';
+import { logOperation, extractLogInfo } from '../middlewares/operationLog.js';
 
 const router = Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -21,7 +22,8 @@ router.use(authMiddleware);
 const TEMPLATE_FIELDS = [
   'name', 'description', 'match_gender',
   'match_age_min', 'match_age_max', 'match_interests',
-  'html_content', 'default_blessing_id', 'preview_image', 'is_active'
+  'html_content', 'default_blessing_id', 'preview_image', 'is_active',
+  'employee_level', 'page_count', 'template_type'
 ];
 
 const sanitizeInput = (obj) => {
@@ -78,6 +80,7 @@ router.post('/', async (req, res) => {
     const result = await Template.findByPk(template.id, {
       include: [{ model: Blessing, as: 'default_blessing', attributes: ['id', 'content'] }]
     });
+    logOperation({ ...extractLogInfo(req), action: 'create', model: 'Template', model_id: template.id, details: { name: template.name } });
     success(res, result, '添加成功');
   } catch (err) {
     error(res, err.message);
@@ -122,6 +125,7 @@ router.put('/:id', async (req, res) => {
       return error(res, '模板不存在', 404);
     }
 
+    logOperation({ ...extractLogInfo(req), action: 'update', model: 'Template', model_id: parseInt(req.params.id), details: sanitizeInput(req.body) });
     success(res, null, '修改成功');
   } catch (err) {
     error(res, err.message);
@@ -139,12 +143,23 @@ router.delete('/:id', async (req, res) => {
       console.log(`[模板] 已解除 ${refCount} 位员工的默认模板关联`);
     }
 
+    // 解除发送记录中的模板引用（保留 card_url 让贺卡仍可访问）
+    const recordCount = await SendRecord.count({ where: { template_id: req.params.id } });
+    if (recordCount > 0) {
+      await SendRecord.update({ template_id: null }, { where: { template_id: req.params.id } });
+      console.log(`[模板] 已解除 ${recordCount} 条发送记录的模板关联`);
+    }
+
+    // 查询模板名称用于操作日志
+    const template = await Template.findByPk(req.params.id);
+
     const deleted = await Template.destroy({ where: { id: req.params.id } });
     
     if (!deleted) {
       return error(res, '模板不存在', 404);
     }
 
+    logOperation({ ...extractLogInfo(req), action: 'delete', model: 'Template', model_id: parseInt(req.params.id), details: { name: template?.name } });
     success(res, null, refCount > 0 ? `删除成功，已解除 ${refCount} 位员工的关联` : '删除成功');
   } catch (err) {
     error(res, err.message);
@@ -171,6 +186,8 @@ router.get('/:id/preview', async (req, res) => {
       '{{position}}': '工程师',
       '{{birthday}}': '6月15日',
       '{{sender}}': '公司工会',
+      '{{company}}': '公司工会',
+      '{{logo_url}}': '',
       '{{blessing}}': template.default_blessing?.content || '祝你生日快乐，万事如意！',
       '{{title}}': '张三的生日贺卡',
       '{{year}}': now.getFullYear().toString(),

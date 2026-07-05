@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { success, error } from '../utils/response.js';
 import { authMiddleware } from '../middlewares/auth.js';
 import { Blessing, Template } from '../models/index.js';
+import { logOperation, extractLogInfo } from '../middlewares/operationLog.js';
 
 const router = Router();
 
@@ -12,6 +13,7 @@ const BLESSING_FIELDS = [
   'match_gender',
   'match_age_min',
   'match_age_max',
+  'match_employee_level',
   'is_active'
 ];
 
@@ -70,6 +72,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const blessing = await Blessing.create(sanitizeInput(req.body));
+    logOperation({ ...extractLogInfo(req), action: 'create', model: 'Blessing', model_id: blessing.id, details: { content: blessing.content?.substring(0, 50) } });
     success(res, blessing, '添加成功');
   } catch (err) {
     error(res, err.message);
@@ -86,6 +89,7 @@ router.put('/:id', async (req, res) => {
     if (!updated) {
       return error(res, '祝福语不存在', 404);
     }
+    logOperation({ ...extractLogInfo(req), action: 'update', model: 'Blessing', model_id: parseInt(req.params.id) });
     success(res, null, '修改成功');
   } catch (err) {
     error(res, err.message);
@@ -103,10 +107,14 @@ router.delete('/:id', async (req, res) => {
       console.log(`[祝福语] 已解除 ${refCount} 个模板的默认祝福语关联`);
     }
 
+    // 查询祝福语内容用于操作日志
+    const blessing = await Blessing.findByPk(req.params.id);
+
     const deleted = await Blessing.destroy({ where: { id: req.params.id } });
     if (!deleted) {
       return error(res, '祝福语不存在', 404);
     }
+    logOperation({ ...extractLogInfo(req), action: 'delete', model: 'Blessing', model_id: parseInt(req.params.id) });
     success(res, null, refCount > 0 ? `删除成功，已解除 ${refCount} 个模板的关联` : '删除成功');
   } catch (err) {
     error(res, err.message);

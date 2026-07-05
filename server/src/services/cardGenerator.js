@@ -49,13 +49,18 @@ export const generateCard = async (template, employee) => {
     }
 
     // 替换占位符
+    const senderName = config.senderName || '公司工会';
+    const companyName = config.companyName || senderName;
+    const logoUrl = config.logoUrl || '';
     const replacements = {
       '{{name}}': employee.name,
       '{{deptBlock}}': deptBlock,
       '{{department}}': dept,
       '{{position}}': pos,
       '{{birthday}}': formatBirthday(employee.birthday),
-      '{{sender}}': config.senderName || '公司工会',
+      '{{sender}}': senderName,
+      '{{company}}': companyName,
+      '{{logo_url}}': logoUrl,
       '{{blessing}}': blessing,
       '{{title}}': `${employee.name}的生日贺卡`,
       '{{year}}': now.getFullYear().toString(),

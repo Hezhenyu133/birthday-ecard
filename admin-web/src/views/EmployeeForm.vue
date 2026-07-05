@@ -3,7 +3,7 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span class="title">{{ isEdit ? '编辑员工' : '添加员工' }}</span>
+          <span class="title">{{ isEdit ? '编辑人员' : '添加人员' }}</span>
           <el-button @click="handleBack">
             <el-icon><Back /></el-icon>
             返回
@@ -45,8 +45,24 @@
           <el-input v-model="formData.phone" placeholder="请输入手机号" maxlength="11" />
         </el-form-item>
 
-        <el-form-item label="部门" prop="department">
-          <el-input v-model="formData.department" placeholder="请输入部门" />
+        <el-form-item label="部门" prop="department_id">
+          <el-tree-select
+            v-model="formData.department_id"
+            :data="deptTreeOptions"
+            :props="{ label: 'name', children: 'children', value: 'id' }"
+            placeholder="选择部门（可选）"
+            clearable
+            check-strictly
+            style="width: 100%"
+          />
+        </el-form-item>
+
+        <el-form-item label="职级" prop="level">
+          <el-select v-model="formData.level" placeholder="选择职级" clearable style="width: 100%">
+            <el-option label="管理层" value="management" />
+            <el-option label="经理" value="manager" />
+            <el-option label="员工" value="employee" />
+          </el-select>
         </el-form-item>
 
         <el-form-item label="职位" prop="position">
@@ -87,6 +103,7 @@ import { Back } from '@element-plus/icons-vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { createEmployee, updateEmployee, getEmployeeDetail } from '@/api/employees'
 import { getTemplateList } from '@/api/templates'
+import { getDepartmentTree, type Department } from '@/api/departments'
 import type { Employee } from '@/api/employees'
 import type { Template } from '@/api/templates'
 
@@ -106,9 +123,23 @@ const formData = reactive<Partial<Employee>>({
   birthday: '',
   phone: '',
   department: '',
+  department_id: null,
+  level: 'employee',
   position: '',
   default_template_id: null
 })
+
+// 部门树数据
+const deptTreeOptions = ref<Department[]>([])
+
+// 加载部门树
+const loadDeptTree = async () => {
+  try {
+    deptTreeOptions.value = await getDepartmentTree()
+  } catch {
+    // 部门树加载失败不影响主功能
+  }
+}
 
 // 表单验证规则
 const rules = reactive<FormRules>({
@@ -159,6 +190,8 @@ const loadEmployeeDetail = async () => {
       birthday: detail.birthday,
       phone: detail.phone,
       department: detail.department || '',
+      department_id: detail.department_id || null,
+      level: detail.level || 'employee',
       position: detail.position || '',
       default_template_id: detail.default_template_id
     })
@@ -206,6 +239,7 @@ const handleBack = () => {
 // 页面加载时获取数据
 onMounted(() => {
   loadTemplates()
+  loadDeptTree()
   loadEmployeeDetail()
 })
 </script>

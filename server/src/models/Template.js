@@ -14,6 +14,17 @@ const Template = sequelize.define('Template', {
   description: {
     type: DataTypes.STRING(255)
   },
+  employee_level: {
+    type: DataTypes.ENUM('management', 'manager', 'employee', 'all'),
+    defaultValue: 'all'
+  },
+  page_count: {
+    type: DataTypes.INTEGER,
+    defaultValue: 4
+  },
+  template_type: {
+    type: DataTypes.ENUM('official', 'festive', 'elegant', 'modern')
+  },
   match_gender: {
     type: DataTypes.ENUM('male', 'female', 'all'),
     defaultValue: 'all'

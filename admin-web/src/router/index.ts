@@ -75,6 +75,16 @@ const routes: RouteRecordRaw[] = [
         path: 'records',
         name: 'SendRecords',
         component: () => import('@/views/SendRecords.vue')
+      },
+      {
+        path: 'operation-logs',
+        name: 'OperationLogs',
+        component: () => import('@/views/OperationLogs.vue')
+      },
+      {
+        path: 'system-stats',
+        name: 'SystemStats',
+        component: () => import('@/views/SystemStats.vue')
       }
     ]
   },

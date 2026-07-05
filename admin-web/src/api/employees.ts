@@ -9,6 +9,9 @@ export interface Employee {
   birthday: string
   phone: string
   department?: string
+  department_id?: number | null
+  department_code?: string
+  level?: 'management' | 'manager' | 'employee'
   position?: string
   default_template_id?: number | null
   is_active?: boolean
@@ -22,6 +25,8 @@ export interface EmployeeQueryParams {
   pageSize?: number
   keyword?: string
   department?: string
+  departmentId?: number
+  level?: string
   is_active?: number
 }
 

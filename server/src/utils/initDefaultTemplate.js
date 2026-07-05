@@ -72,6 +72,12 @@ const TEMPLATE_MANIFEST = [
     name: '通用2',
     description: '华丽通用贺卡（风格二），金色装饰与烟花背景，高端大气',
     match_gender: 'all'
+  },
+  {
+    file: '通用3.html',
+    name: '通用3',
+    description: '高级质感贺卡（风格三），暗色调+金色点缀，含粒子特效与自动翻页，内嵌实景照片与背景音乐',
+    match_gender: 'all'
   }
 ];
 

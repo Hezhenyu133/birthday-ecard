@@ -17,7 +17,7 @@ const SendRecord = sequelize.define('SendRecord', {
   },
   template_id: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
     references: {
       model: 'templates',
       key: 'id'
@@ -64,6 +64,19 @@ const SendRecord = sequelize.define('SendRecord', {
   retry_count: {
     type: DataTypes.INTEGER,
     defaultValue: 0
+  },
+  sms_content: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  // --- 冗余字段：方便查询时直接显示，无需关联 ---
+  template_name: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  blessing_content: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
   tableName: 'send_records',

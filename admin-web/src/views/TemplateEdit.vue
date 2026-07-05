@@ -84,6 +84,31 @@
               />
             </el-form-item>
 
+            <el-form-item label="适用职级" prop="employee_level">
+              <el-select v-model="formData.employee_level" placeholder="请选择适用职级" style="width: 200px">
+                <el-option label="通用（所有职级）" value="all" />
+                <el-option label="管理层" value="management" />
+                <el-option label="经理" value="manager" />
+                <el-option label="员工" value="employee" />
+              </el-select>
+            </el-form-item>
+
+            <el-form-item label="模板页数" prop="page_count">
+              <el-select v-model="formData.page_count" placeholder="请选择页数" style="width: 200px">
+                <el-option label="4 页" :value="4" />
+                <el-option label="6 页" :value="6" />
+              </el-select>
+            </el-form-item>
+
+            <el-form-item label="模板风格" prop="template_type">
+              <el-select v-model="formData.template_type" placeholder="请选择模板风格（可选）" clearable style="width: 200px">
+                <el-option label="正式" value="official" />
+                <el-option label="节日" value="festive" />
+                <el-option label="优雅" value="elegant" />
+                <el-option label="现代" value="modern" />
+              </el-select>
+            </el-form-item>
+
             <el-form-item label="默认祝福语" prop="default_blessing_id">
               <el-select
                 v-model="formData.default_blessing_id"
@@ -98,7 +123,7 @@
                   :value="blessing.id"
                 />
               </el-select>
-              <div class="hint-text">如果选择，预览和生成卡片时将使用该祝福语替换 {{blessing}} 占位符。</div>
+              <div class="hint-text">如果选择，预览和生成卡片时将使用该祝福语替换 {{ blessingPlaceholder }} 占位符。</div>
             </el-form-item>
 
             <el-divider content-position="left">模板内容</el-divider>
@@ -165,6 +190,9 @@ import type { Blessing } from '@/api/blessings'
 const route = useRoute()
 const router = useRouter()
 
+// 用于模板中显示占位符名称（避免 Vue 模板解析嵌套花括号）
+const blessingPlaceholder = '{{blessing}}'
+
 // 是否为编辑模式
 const isEdit = computed(() => !!route.params.id)
 
@@ -179,6 +207,9 @@ const formData = reactive<Partial<Template>>({
   match_age_min: null,
   match_age_max: null,
   match_interests: '',
+  employee_level: 'all',
+  page_count: 4,
+  template_type: null,
   default_blessing_id: null,
   // 后端仍使用 html_content 字段；前端管理员使用 text_content 编辑，提交时会注入到原始 HTML 模板中
   html_content: '',
@@ -282,6 +313,18 @@ const injectTextIntoTemplate = (text: string, html: string): string => {
   return `${before}\n<${wrapper.tag}${wrapper.attrs}>\n${contentHtml}\n</${wrapper.tag}>\n${after}`
 }
 
+// 模拟模板内 formatBlessingText() 的逗号断句逻辑（v-html 不执行 <script>）
+const formatBlessingForPreview = (text: string): string => {
+  if (!text) return text
+  const parts = text.split(/[，；]/).map(s => s.trim()).filter(Boolean)
+  if (parts.length > 1) {
+    return parts.map(p =>
+      `<span class="comma-line" style="display:block">${p.replace(/[。]+$/, '')}</span>`
+    ).join('')
+  }
+  return text.replace(/[。]+$/, '')
+}
+
 // 刷新预览：优先使用纯文本编辑内容，其次回退到后端 html_content
 const refreshPreview = async () => {
   const hasText = !!formData.text_content
@@ -311,7 +354,7 @@ const refreshPreview = async () => {
       .replace(/\{\{department\}\}/g, '技术部')
       .replace(/\{\{position\}\}/g, '工程师')
       .replace(/\{\{sender\}\}/g, '公司工会')
-      .replace(/\{\{blessing\}\}/g, blessingText)
+      .replace(/\{\{blessing\}\}/g, formatBlessingForPreview(blessingText))
       .replace(/\{\{year\}\}/g, new Date().getFullYear().toString())
 }
 

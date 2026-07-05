@@ -14,6 +14,8 @@ export interface LoginResponse {
     username: string
     display_name: string
   }
+  must_change_password: boolean
+  password_expired: boolean
 }
 
 // 管理员登录
@@ -34,4 +36,14 @@ export interface ChangePasswordParams {
 
 export const changePassword = (data: ChangePasswordParams) => {
   return request.post('/auth/change-password', data)
+}
+
+// 验证当前密码
+export const verifyPassword = (password: string): Promise<{ valid: boolean }> => {
+  return request.post('/auth/verify-password', { password })
+}
+
+// 退出登录
+export const logout = () => {
+  return request.post('/auth/logout')
 }

@@ -26,6 +26,10 @@ export const config = {
   uploadsDir: process.env.UPLOADS_DIR || './uploads',
   // 贺卡发送者名称（用于模板 {{sender}} 占位符）
   senderName: process.env.SENDER_NAME || '公司工会',
+  // 公司名称（用于模板 {{company}} 占位符，默认与 senderName 相同）
+  companyName: process.env.COMPANY_NAME || process.env.SENDER_NAME || '公司工会',
+  // 公司 Logo URL（用于模板 {{logo_url}} 占位符）
+  logoUrl: process.env.LOGO_URL || '',
   // 短信发送配置
   sms: {
     provider: smsProvider,
@@ -36,5 +40,11 @@ export const config = {
     maxRetries: parseInt(process.env.SMS_MAX_RETRIES) || 3,
     retryDelay: parseInt(process.env.SMS_RETRY_DELAY) || 1000,
     timeout: parseInt(process.env.SMS_TIMEOUT) || 10000
-  }
+  },
+  // 操作日志保留天数（默认 60 天）
+  logRetentionDays: parseInt(process.env.LOG_RETENTION_DAYS) || 60,
+  // 会话超时时间（分钟，默认 30 分钟）
+  sessionTimeoutMinutes: parseInt(process.env.SESSION_TIMEOUT_MINUTES) || 30,
+  // 最大并发会话数（默认 3）
+  maxConcurrentSessions: parseInt(process.env.MAX_CONCURRENT_SESSIONS) || 3
 };

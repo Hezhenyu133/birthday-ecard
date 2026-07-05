@@ -6,6 +6,7 @@ export interface Blessing {
   match_gender?: 'male' | 'female' | 'all'
   match_age_min?: number | null
   match_age_max?: number | null
+  match_employee_level?: 'management' | 'manager' | 'employee' | 'all' | null
   is_active?: boolean
   template_count?: number
   created_at?: string

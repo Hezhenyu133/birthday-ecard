@@ -22,14 +22,29 @@ export const pickRandomUniversalBlessing = async () => {
 
 /**
  * 随机选取一个通用模板
+ * @param {string} [employeeLevel] - 员工等级，优先选取匹配该等级的模板
  * @returns {Promise<Template|null>}
  */
-export const pickRandomUniversalTemplate = async () => {
+export const pickRandomUniversalTemplate = async (employeeLevel = null) => {
+  const where = { match_gender: 'all', is_active: true };
+  // 如果有员工等级，优先找匹配该等级的模板
+  if (employeeLevel) {
+    const { Op } = await import('sequelize');
+    where[Op.or] = [
+      { employee_level: employeeLevel },
+      { employee_level: 'all' },
+      { employee_level: null }
+    ];
+  }
   const templates = await Template.findAll({
-    where: { match_gender: 'all', is_active: true },
-    attributes: ['id', 'name', 'match_gender']   // 轻量查询
+    where,
+    attributes: ['id', 'name', 'match_gender', 'employee_level']
   });
-  if (templates.length === 0) return null;
+  if (templates.length === 0) {
+    // 降级：不带等级条件再找一次
+    if (employeeLevel) return pickRandomUniversalTemplate(null);
+    return null;
+  }
   return templates[Math.floor(Math.random() * templates.length)];
 };
 
@@ -60,7 +75,7 @@ export const autoAssignBlessingToTemplate = async (template) => {
 export const autoAssignTemplateToEmployee = async (employee) => {
   if (employee.default_template_id) return employee; // 已手动指定
 
-  const template = await pickRandomUniversalTemplate();
+  const template = await pickRandomUniversalTemplate(employee.level);
   if (template) {
     await employee.update({ default_template_id: template.id });
     console.log(`[自动匹配] 员工 #${employee.id}「${employee.name}」→ 模板 #${template.id}「${template.name}」`);

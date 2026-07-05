@@ -87,15 +87,14 @@
         <el-table-column label="短信内容" min-width="280">
           <template #default="{ row }">
             <div class="sms-content">
-              <div class="sms-line">亲爱的{{ row.employee?.name }}，祝您生日快乐！</div>
-              <div class="sms-line sms-link-line">
+              <div class="sms-line">{{ row.sms_content || '暂无短信内容' }}</div>
+              <div class="sms-line sms-link-line" v-if="row.card_url">
                 点击查看贺卡：
                 <el-button
                   type="primary"
                   link
                   size="small"
                   @click="handlePreviewCard(row)"
-                  :disabled="!row.card_url"
                 >
                   <el-icon><Link /></el-icon>
                   打开贺卡

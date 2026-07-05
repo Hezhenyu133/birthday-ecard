@@ -21,6 +21,10 @@ const Blessing = sequelize.define('Blessing', {
   match_age_max: {
     type: DataTypes.INTEGER
   },
+  match_employee_level: {
+    type: DataTypes.ENUM('management', 'manager', 'employee', 'all'),
+    defaultValue: 'all'
+  },
   is_active: {
     type: DataTypes.BOOLEAN,
     defaultValue: true

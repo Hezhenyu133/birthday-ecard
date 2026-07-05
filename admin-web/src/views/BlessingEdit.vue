@@ -58,6 +58,15 @@
           </el-space>
         </el-form-item>
 
+        <el-form-item label="适用职级" prop="match_employee_level">
+          <el-select v-model="formData.match_employee_level" placeholder="请选择适用职级" style="width: 200px">
+            <el-option label="通用（所有职级）" value="all" />
+            <el-option label="管理层" value="management" />
+            <el-option label="经理" value="manager" />
+            <el-option label="员工" value="employee" />
+          </el-select>
+        </el-form-item>
+
         <el-form-item label="启用状态" prop="is_active">
           <el-switch v-model="formData.is_active" active-text="启用" inactive-text="禁用" />
         </el-form-item>
@@ -92,6 +101,7 @@ const formData = reactive<Partial<Blessing>>({
   match_gender: 'all',
   match_age_min: null,
   match_age_max: null,
+  match_employee_level: 'all',
   is_active: true
 })
 
@@ -111,6 +121,7 @@ const loadBlessingDetail = async () => {
       match_gender: detail.match_gender || 'all',
       match_age_min: detail.match_age_min,
       match_age_max: detail.match_age_max,
+      match_employee_level: detail.match_employee_level || 'all',
       is_active: detail.is_active
     })
   } catch (error) {

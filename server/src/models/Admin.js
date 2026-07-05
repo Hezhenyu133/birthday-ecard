@@ -19,6 +19,20 @@ const Admin = sequelize.define('Admin', {
   display_name: {
     type: DataTypes.STRING(50),
     allowNull: false
+  },
+  is_active: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  },
+  password_changed_at: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  },
+  must_change_password: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
   }
 }, {
   tableName: 'admins',

@@ -10,6 +10,9 @@ export interface Template {
   match_age_min?: number | null
   match_age_max?: number | null
   match_interests?: string | null
+  employee_level?: 'management' | 'manager' | 'employee' | 'all' | null
+  page_count?: number | null
+  template_type?: 'official' | 'festive' | 'elegant' | 'modern' | null
   html_content: string
   default_blessing_id?: number | null
   default_blessing?: Blessing | null
