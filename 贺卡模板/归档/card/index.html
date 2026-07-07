@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>高管生日贺卡·时光档案馆版</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="card-app" aria-live="polite">
+    <canvas id="fxCanvas" aria-hidden="true"></canvas>
+
+    <button class="music-toggle is-paused" type="button" aria-label="音乐开关">
+      <span class="music-mark" aria-hidden="true"></span>
+    </button>
+
+    <p class="archive-brand">Executive Birthday Archive</p>
+
+    <nav class="page-progress" aria-label="页面导航">
+      <button class="progress-segment is-active" type="button" data-jump="cover" aria-label="第1页"></button>
+      <button class="progress-segment" type="button" data-jump="name" aria-label="第2页"></button>
+      <button class="progress-segment" type="button" data-jump="imprint" aria-label="第3页"></button>
+      <button class="progress-segment" type="button" data-jump="compass" aria-label="第4页"></button>
+      <button class="progress-segment" type="button" data-jump="wish" aria-label="第5页"></button>
+      <button class="progress-segment" type="button" data-jump="message" aria-label="第6页"></button>
+      <button class="progress-segment" type="button" data-jump="final" aria-label="第7页"></button>
+    </nav>
+
+    <section class="screen cover active" data-screen="cover">
+      <img class="scene-bg" src="assets/generated/01-cover-bg.png" alt="" loading="eager">
+      <div class="scene-overlay" aria-hidden="true"></div>
+      <div class="page-index">01 / 07</div>
+      <div class="copy-block copy-cover">
+        <p class="eyebrow">Time Archive</p>
+        <h1>生日快乐</h1>
+        <span class="rule-line" aria-hidden="true"></span>
+        <p class="lead">把一段值得珍藏的时光，郑重翻开。</p>
+        <button class="primary-action" type="button" data-next="name">开启祝福</button>
+      </div>
+    </section>
+
+    <section class="screen name" data-screen="name">
+      <img class="scene-bg" src="assets/generated/02-name-bg.png" alt="" loading="lazy">
+      <div class="scene-overlay" aria-hidden="true"></div>
+      <div class="page-index">02 / 07</div>
+      <div class="copy-block copy-name">
+        <p class="eyebrow">Dedicated To</p>
+        <h2>{{name}}</h2>
+        <span class="rule-line" aria-hidden="true"></span>
+        <p class="lead">愿这一天，像一枚妥帖归档的纪念章，安静而笃定地属于你。</p>
+        <button class="primary-action" type="button" data-next="imprint">继续翻页</button>
+      </div>
+    </section>
+
+    <section class="screen imprint" data-screen="imprint">
+      <img class="scene-bg" src="assets/generated/03-imprint-bg.png" alt="" loading="lazy">
+      <div class="scene-overlay" aria-hidden="true"></div>
+      <div class="page-index">03 / 07</div>
+      <div class="copy-block copy-imprint">
+        <p class="eyebrow">Year Imprint</p>
+        <h3>判断、节奏与影响力</h3>
+        <span class="rule-line" aria-hidden="true"></span>
+        <p class="lead">那些被认真推动的决定，那些稳住方向的时刻，都在这一页留下清晰印记。</p>
+        <button class="primary-action" type="button" data-next="compass">下一页</button>
+      </div>
+    </section>
+
+    <section class="screen compass" data-screen="compass">
+      <img class="scene-bg" src="assets/generated/04-compass-bg.png" alt="" loading="lazy">
+      <div class="scene-overlay" aria-hidden="true"></div>
+      <div class="page-index">04 / 07</div>
+      <div class="copy-block copy-compass">
+        <p class="eyebrow">Vision Compass</p>
+        <h3>愿远见始终清醒</h3>
+        <span class="rule-line" aria-hidden="true"></span>
+        <p class="lead">愿新的一岁，你仍能在复杂之中看见秩序，在关键之处保持从容。</p>
+        <button class="primary-action" type="button" data-next="wish">继续前行</button>
+      </div>
+    </section>
+
+    <section class="screen wish" data-screen="wish">
+      <img class="scene-bg" src="assets/generated/05-wish-bg.png" alt="" loading="lazy">
+      <div class="scene-overlay" aria-hidden="true"></div>
+      <div class="page-index">05 / 07</div>
+      <div class="copy-block copy-wish">
+        <p class="eyebrow">A New Chapter</p>
+        <h3>愿生活也有宽阔余裕</h3>
+        <span class="rule-line" aria-hidden="true"></span>
+        <p class="lead">愿健康、热望与好心情，与事业的每一次向前并肩而行。</p>
+        <button class="primary-action" type="button" data-next="message">查看祝福</button>
+      </div>
+    </section>
+
+    <section class="screen message" data-screen="message">
+      <img class="scene-bg" src="assets/generated/06-message-bg.png" alt="" loading="lazy">
+      <div class="scene-overlay" aria-hidden="true"></div>
+      <div class="page-index">06 / 07</div>
+      <div class="copy-block copy-message">
+        <p class="eyebrow">Personal Message</p>
+        <h3>写给你的生日祝福</h3>
+        <span class="rule-line" aria-hidden="true"></span>
+        <p class="message-text">{{message}}</p>
+        <button class="primary-action" type="button" data-next="final">收下祝福</button>
+      </div>
+    </section>
+
+    <section class="screen final" data-screen="final">
+      <img class="scene-bg" src="assets/generated/07-final-bg.png" alt="" loading="lazy">
+      <div class="scene-overlay" aria-hidden="true"></div>
+      <div class="page-index">07 / 07</div>
+      <div class="copy-block copy-final">
+        <p class="eyebrow">Bright Year Ahead</p>
+        <h2>生日快乐</h2>
+        <span class="rule-line" aria-hidden="true"></span>
+        <p class="lead">愿新的年岁，沉稳、明亮，也拥有更多值得被珍藏的瞬间。</p>
+        <button class="primary-action" type="button" data-next="cover">再看一次</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

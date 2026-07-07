@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>林小雨 · 生日快乐</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="card-app employee-image-app">
+    <canvas id="fxCanvas" aria-hidden="true"></canvas>
+
+    <!-- 自动播放进度条 -->
+    <div class="auto-progress hidden" id="autoProgress"></div>
+
+    <button class="music-toggle is-paused" type="button" aria-label="音乐开关">
+      <span class="music-icon"></span>
+    </button>
+
+    <nav class="page-dots" aria-label="页面导航">
+      <button class="dot is-active" type="button" data-jump="cover" aria-label="封面页"></button>
+      <button class="dot" type="button" data-jump="wish" aria-label="祝福页"></button>
+      <button class="dot" type="button" data-jump="highlight" aria-label="高光页"></button>
+      <button class="dot" type="button" data-jump="final" aria-label="结尾页"></button>
+    </nav>
+
+    <!-- ===== 第1页：封面 ===== -->
+    <section class="screen cover active" data-screen="cover">
+      <img class="scene-bg" src="assets/generated/01-cover-bg.png" alt="" loading="eager">
+      <div class="scene-overlay scene-overlay-cover" aria-hidden="true"></div>
+      <div class="brand-slot">
+        <img class="brand-logo" src="" alt="星辰科技有限公司"
+             onerror="this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='block')">
+        <span class="brand-text" style="display:none">星辰科技有限公司</span>
+      </div>
+      <p class="progress-tag">01 / 04</p>
+
+      <div class="copy-panel cover-panel">
+        <p class="eyebrow">Warm Birthday Wishes</p>
+        <h1>生日快乐</h1>
+        <p class="english-title">HAPPY BIRTHDAY</p>
+        <p class="hero-copy">把今晚的暖光、掌声和温柔，都送给认真生活的你。</p>
+        <button class="primary-action" type="button" data-next="wish" data-auto="true">开启祝福</button>
+      </div>
+
+      <div class="scroll-hint" aria-label="向下滑动"></div>
+    </section>
+
+    <!-- ===== 第2页：祝福 ===== -->
+    <section class="screen wish" data-screen="wish">
+      <img class="scene-bg" src="assets/generated/02-wish-bg.png" alt="" loading="lazy">
+      <div class="scene-overlay scene-overlay-wish" aria-hidden="true"></div>
+      <div class="brand-slot">
+        <img class="brand-logo" src="" alt="星辰科技有限公司"
+             onerror="this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='block')">
+        <span class="brand-text" style="display:none">星辰科技有限公司</span>
+      </div>
+      <p class="progress-tag">02 / 04</p>
+
+      <div class="copy-panel wish-panel">
+        <p class="eyebrow">For 林小雨</p>
+        <h2>林小雨</h2>
+        <!-- editable-start -->
+        <p class="message">今天是属于你的日子，愿所有美好都如约而至</p>
+        <!-- editable-end -->
+        <p class="signature-copy">愿你被看见，也被认真庆祝。</p>
+        <button class="primary-action" type="button" data-next="highlight">继续翻页</button>
+      </div>
+    </section>
+
+    <!-- ===== 第3页：高光 ===== -->
+    <section class="screen highlight" data-screen="highlight">
+      <img class="scene-bg" src="assets/generated/03-highlight-bg.png" alt="" loading="lazy">
+      <div class="scene-overlay scene-overlay-highlight" aria-hidden="true"></div>
+      <div class="brand-slot">
+        <img class="brand-logo" src="" alt="星辰科技有限公司"
+             onerror="this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='block')">
+        <span class="brand-text" style="display:none">星辰科技有限公司</span>
+      </div>
+      <p class="progress-tag">03 / 04</p>
+
+      <div class="copy-panel highlight-panel">
+        <p class="eyebrow">A Gentle Spotlight</p>
+        <h2>这一年的认真与辛苦，值得被温柔庆祝</h2>
+        <p>愿你在忙碌里依然拥有被善待的时刻，在平凡日子里也能收到属于自己的掌声与惊喜。</p>
+        <p class="support-note">来自星辰科技有限公司的一份生日心意</p>
+        <button class="primary-action ghost-light" type="button" data-next="final">走向高光</button>
+      </div>
+    </section>
+
+    <!-- ===== 第4页：结尾 ===== -->
+    <section class="screen final" data-screen="final">
+      <img class="scene-bg" src="assets/generated/04-final-bg.png" alt="" loading="lazy">
+      <div class="scene-overlay scene-overlay-final" aria-hidden="true"></div>
+      <div class="brand-slot">
+        <img class="brand-logo" src="" alt="星辰科技有限公司"
+             onerror="this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='block')">
+        <span class="brand-text" style="display:none">星辰科技有限公司</span>
+      </div>
+      <p class="progress-tag">04 / 04</p>
+
+      <div class="copy-panel final-panel">
+        <p class="eyebrow">Tonight Is Yours</p>
+        <h2>把今夜的好运，都赠予你</h2>
+        <p>愿新一岁的你，多一点从容，多一点被爱，也多一点心想事成。</p>
+
+        <!-- 正式落款区域 -->
+        <div class="formal-signature">
+          <p class="sig-company">星辰科技有限公司全体同仁 敬贺</p>
+          <p class="sig-date">2026年6月18日</p>
+        </div>
+
+        <button class="primary-action" type="button" data-next="cover">再看一次</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

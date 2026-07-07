@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>高管生日贺卡·城市私享夜宴版</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="card-app private-banquet-app">
+    <canvas id="fxCanvas" aria-hidden="true"></canvas>
+
+    <button class="music-toggle is-paused" type="button" aria-label="音乐开关">
+      <span class="music-icon"></span>
+    </button>
+
+    <section class="screen cover active" data-screen="cover">
+      <img class="scene-bg" src="assets/generated/01-cover-bg.png" alt="" loading="eager">
+      <div class="scene-overlay scene-overlay-cover" aria-hidden="true"></div>
+      <div class="brand-slot">
+        <img class="brand-logo" src="../logo.svg" alt="信阳移动"
+             onerror="this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='block')">
+        <span class="brand-text" style="display:none">信阳移动</span>
+      </div>
+      <p class="progress-tag">01 / 07</p>
+      <div class="copy-panel cover-panel">
+        <p class="eyebrow">Private Executive Banquet</p>
+        <h1>生日快乐</h1>
+        <p class="english-title">HAPPY BIRTHDAY</p>
+        <p class="hero-copy">恭祝您生辰快乐，愿您身心舒展，体魄康健，岁岁平安常伴左右。</p>
+      </div>
+    </section>
+
+    <section class="screen identity" data-screen="identity">
+      <img class="scene-bg" src="assets/generated/02-identity-bg.png" alt="" loading="lazy">
+      <div class="scene-overlay scene-overlay-identity" aria-hidden="true"></div>
+      <div class="brand-slot">
+        <img class="brand-logo" src="../logo.svg" alt="信阳移动"
+             onerror="this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='block')">
+        <span class="brand-text" style="display:none">信阳移动</span>
+      </div>
+      <p class="progress-tag">02 / 07</p>
+      <div class="copy-panel identity-panel">
+        <p class="eyebrow">Guest Of Honor</p>
+        <h2>{{name}}</h2>
+        <p class="meta-line">{{title}}</p>
+        <p class="meta-line muted">{{department}}</p>
+        <p class="support-note">生辰喜乐，愿家中万事和顺，亲人安康，日子温馨美满。</p>
+      </div>
+    </section>
+
+    <section class="screen message" data-screen="message">
+      <img class="scene-bg" src="assets/generated/03-message-bg.png" alt="" loading="lazy">
+      <div class="scene-overlay scene-overlay-message" aria-hidden="true"></div>
+      <div class="brand-slot">
+        <img class="brand-logo" src="../logo.svg" alt="信阳移动"
+             onerror="this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='block')">
+        <span class="brand-text" style="display:none">信阳移动</span>
+      </div>
+      <p class="progress-tag">03 / 07</p>
+      <div class="copy-panel message-panel">
+        <p class="eyebrow">Birthday Message</p>
+        <h3>为你准备的一段祝福</h3>
+        <p class="message-text">{{message}}</p>
+      </div>
+    </section>
+
+    <section class="screen honor" data-screen="honor">
+      <img class="scene-bg" src="assets/generated/04-honor-bg.png" alt="" loading="lazy">
+      <div class="scene-overlay scene-overlay-honor" aria-hidden="true"></div>
+      <div class="brand-slot">
+        <img class="brand-logo" src="../logo.svg" alt="信阳移动"
+             onerror="this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='block')">
+        <span class="brand-text" style="display:none">信阳移动</span>
+      </div>
+      <p class="progress-tag">04 / 07</p>
+      <div class="copy-panel honor-panel">
+        <p class="eyebrow">With Poise And Impact</p>
+        <h3>愿您从容顺遂，福气绵长，工作舒心，喜乐常伴。</h3>
+        <p>愿新的一岁里，你依然拥有坚定的判断，也始终保有让人安心的温度。</p>
+      </div>
+    </section>
+
+    <section class="screen reflection" data-screen="reflection">
+      <img class="scene-bg" src="assets/generated/05-reflection-bg.png" alt="" loading="lazy">
+      <div class="scene-overlay scene-overlay-reflection" aria-hidden="true"></div>
+      <div class="brand-slot">
+        <img class="brand-logo" src="../logo.svg" alt="信阳移动"
+             onerror="this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='block')">
+        <span class="brand-text" style="display:none">信阳移动</span>
+      </div>
+      <p class="progress-tag">05 / 07</p>
+      <div class="copy-panel reflection-panel">
+        <p class="eyebrow">A Year Worth Remembering</p>
+        <h3>这一页，为值得纪念的时刻而留</h3>
+        <p class="year-note">{{year_note}}</p>
+        <p class="support-note">愿那些被认真走过的路，都在新的年岁里开出更明亮的回响。</p>
+      </div>
+    </section>
+
+    <section class="screen signoff" data-screen="signoff">
+      <img class="scene-bg" src="assets/generated/06-signoff-bg.png" alt="" loading="lazy">
+      <div class="scene-overlay scene-overlay-signoff" aria-hidden="true"></div>
+      <div class="brand-slot">
+        <img class="brand-logo" src="../logo.svg" alt="信阳移动"
+             onerror="this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='block')">
+        <span class="brand-text" style="display:none">信阳移动</span>
+      </div>
+      <p class="progress-tag">06 / 07</p>
+      <div class="copy-panel signoff-panel">
+        <p class="eyebrow">Warm Regards</p>
+        <h3>这份生日心意，谨以此页致上</h3>
+        <div class="formal-signature">
+          <p class="sig-company">信阳移动公司工会 敬贺</p>
+          <p class="sig-date">{{year}}年{{month}}月{{day}}日</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen final" data-screen="final">
+      <img class="scene-bg" src="assets/generated/07-final-bg.png" alt="" loading="lazy">
+      <div class="scene-overlay scene-overlay-final" aria-hidden="true"></div>
+      <div class="brand-slot">
+        <img class="brand-logo" src="../logo.svg" alt="信阳移动"
+             onerror="this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='block')">
+        <span class="brand-text" style="display:none">信阳移动</span>
+      </div>
+      <p class="progress-tag">07 / 07</p>
+      <div class="copy-panel final-panel">
+        <p class="eyebrow">Tonight Is Yours</p>
+        <h2>新岁无忧，运筹顺意</h2>
+        <p>愿新的旅程，依旧由清醒与热望并肩而行，愿你收获更多值得庆祝的答案与风景。</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

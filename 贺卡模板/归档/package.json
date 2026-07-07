@@ -1,0 +1,14 @@
+{
+  "name": "h5-birthday-card-recorder",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "record": "node record-card.js --card ./card --out ./output/birthday-card.mp4",
+    "record:mobile": "node record-card-mobile.js --card ./card --out ./output/birthday-card-mobile.mp4",
+    "install-browser": "npx playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "latest"
+  }
+}
