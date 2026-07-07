@@ -8,8 +8,8 @@ import { Op, fn, col, literal } from 'sequelize';
 import { sequelize, SendRecord, Employee } from '../models/index.js';
 import { getSenderHeartbeat } from './heartbeatService.js';
 
-// 心跳超时阈值：2 小时（毫秒）
-const HEARTBEAT_TIMEOUT_MS = 2 * 60 * 60 * 1000;
+// 心跳超时阈值：25 小时（发送服务每日 08:00 运行一次，需覆盖全天）
+const HEARTBEAT_TIMEOUT_MS = 25 * 60 * 60 * 1000;
 
 /**
  * 检查发送服务健康状态

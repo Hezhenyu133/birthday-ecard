@@ -46,6 +46,9 @@ app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
+// 静态文件服务（uploads 目录下的 logo 等资源）
+app.use('/uploads', express.static(path.join(__dirname, '..', '..', 'uploads')));
+
 // 健康检查（无需认证）
 app.get('/api/health', (req, res) => {
   res.json({ code: 200, message: 'OK', data: { status: 'healthy', timestamp: new Date() } });

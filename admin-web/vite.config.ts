@@ -21,6 +21,10 @@ export default defineConfig({
         changeOrigin: true, // 允许跨域
         secure: false // 如果是 https 接口，需要配置这个参数
         // 注意：不要 rewrite，后端路由本身就带 /api 前缀
+      },
+      '/uploads': {
+        target: 'http://localhost:3000', // 后端服务器（静态文件）
+        changeOrigin: true
       }
     }
   },
@@ -42,9 +46,5 @@ export default defineConfig({
         assetFileNames: 'static/[ext]/[name]-[hash].[ext]'
       }
     }
-  },
-  // CSS 配置
-  css: {
-    postcss: './postcss.config.js'
   }
 })

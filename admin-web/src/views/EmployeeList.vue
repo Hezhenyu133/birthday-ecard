@@ -133,7 +133,7 @@
               </template>
             </el-table-column>
             <el-table-column prop="position" label="职位" min-width="120" />
-            <el-table-column label="操作" width="180" fixed="right">
+            <el-table-column label="操作" width="220" fixed="right">
               <template #default="{ row }">
                 <el-button type="success" size="small" @click="handleSend(row)">发送</el-button>
                 <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>

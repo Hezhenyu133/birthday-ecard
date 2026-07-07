@@ -4,16 +4,16 @@
     <aside :class="['sidebar', { collapsed: isCollapsed }]">
       <div class="sidebar-header">
         <h1 v-show="!isCollapsed">生日贺卡管理</h1>
-        <h1 v-show="isCollapsed">🎂</h1>
+        <h1 v-show="isCollapsed"></h1>
       </div>
 
       <nav class="sidebar-menu">
         <el-menu
           :default-active="activeMenu"
           :collapse="isCollapsed"
-          background-color="#304156"
-          text-color="#bfcbd9"
-          active-text-color="#409EFF"
+          background-color="#006BA3"
+          text-color="rgba(255,255,255,0.75)"
+          active-text-color="#ffffff"
           router
         >
           <el-menu-item index="/">
@@ -79,12 +79,18 @@
             @click="toggleSidebar"
             class="collapse-btn"
           />
+          <div class="header-title">
+            <span class="header-logo-wrap">
+              <img :src="logoUrl" alt="logo" class="header-logo" />
+            </span>
+            <span>工会生日贺卡管理系统</span>
+          </div>
         </div>
 
         <div class="header-right">
           <el-dropdown @command="handleCommand">
             <div class="user-info">
-              <el-avatar :size="32" style="background-color: #409EFF">
+              <el-avatar :size="32" style="background-color: var(--accent-color)">
                 {{ userInitial }}
               </el-avatar>
               <span class="username">{{ displayName }}</span>
@@ -113,13 +119,13 @@
           label-width="100px"
         >
           <el-form-item label="原密码" prop="oldPassword">
-            <el-input v-model="passwordForm.oldPassword" type="password" autocomplete="off" />
+            <el-input v-model="passwordForm.oldPassword" type="password" show-password autocomplete="off" />
           </el-form-item>
           <el-form-item label="新密码" prop="newPassword">
-            <el-input v-model="passwordForm.newPassword" type="password" autocomplete="off" />
+            <el-input v-model="passwordForm.newPassword" type="password" show-password autocomplete="off" />
           </el-form-item>
           <el-form-item label="确认密码" prop="confirmPassword">
-            <el-input v-model="passwordForm.confirmPassword" type="password" autocomplete="off" />
+            <el-input v-model="passwordForm.confirmPassword" type="password" show-password autocomplete="off" />
           </el-form-item>
         </el-form>
         <template #footer>
@@ -132,6 +138,13 @@
       <main class="content">
         <router-view />
       </main>
+
+      <!-- 底部 -->
+      <footer class="footer">
+        <span>© 信阳移动公司工会</span>
+        <span class="footer-divider">|</span>
+        <span>豫ICP备xxxx号</span>
+      </footer>
     </div>
   </div>
 </template>
@@ -162,6 +175,9 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
+// Logo 地址（动态绑定避免 Vite 静态分析）
+const logoUrl = '/uploads/logo.svg'
+
 // 侧边栏折叠状态
 const isCollapsed = ref(false)
 
@@ -183,7 +199,8 @@ const passwordRules = {
   ],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, message: '新密码长度不能少于6位', trigger: 'blur' }
+    { min: 6, message: '新密码长度不能少于6位', trigger: 'blur' },
+    { pattern: /^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z\d!@#$%^&*]{6,}$/, message: '需包含字母和数字', trigger: 'blur' }
   ],
   confirmPassword: [
     { required: true, message: '请确认新密码', trigger: 'blur' },
@@ -329,8 +346,8 @@ onUnmounted(() => {
 
 /* 侧边栏样式 */
 .sidebar {
-  width: 240px;
-  background-color: #304156;
+  width: var(--sidebar-width);
+  background-color: var(--primary-dark);
   transition: width 0.3s ease;
   display: flex;
   flex-direction: column;
@@ -338,24 +355,25 @@ onUnmounted(() => {
 }
 
 .sidebar.collapsed {
-  width: 64px;
+  width: var(--sidebar-collapsed-width);
 }
 
 .sidebar-header {
-  height: 60px;
+  height: var(--header-height);
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #263445;
+  background-color: var(--primary-dark);
   padding: 0 16px;
+  overflow: hidden;
 }
 
 .sidebar-header h1 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   color: #fff;
   white-space: nowrap;
-  overflow: hidden;
+  text-align: center;
 }
 
 .sidebar-menu {
@@ -365,6 +383,17 @@ onUnmounted(() => {
 
 .sidebar-menu .el-menu {
   border-right: none;
+}
+
+/* 侧边栏激活项高亮 */
+.sidebar-menu :deep(.el-menu-item.is-active) {
+  background-color: var(--primary-color) !important;
+  border-right: 3px solid var(--accent-color);
+}
+
+.sidebar-menu :deep(.el-sub-menu .el-menu-item.is-active) {
+  background-color: var(--primary-color) !important;
+  border-right: 3px solid var(--accent-color);
 }
 
 /* 主内容区 */
@@ -377,9 +406,9 @@ onUnmounted(() => {
 
 /* 顶部导航栏 */
 .header {
-  height: 60px;
-  background-color: #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  height: var(--header-height);
+  background-color: var(--primary-color);
+  box-shadow: var(--shadow-sm);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -390,10 +419,42 @@ onUnmounted(() => {
 .header-left {
   display: flex;
   align-items: center;
+  gap: 16px;
 }
 
 .collapse-btn {
   border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.header-logo-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 6px;
+  padding: 3px 5px;
+  flex-shrink: 0;
+}
+
+.header-logo {
+  height: 28px;
+  width: auto;
 }
 
 .header-right {
@@ -409,23 +470,41 @@ onUnmounted(() => {
   padding: 8px 12px;
   border-radius: 4px;
   transition: background-color 0.3s;
+  color: #fff;
 }
 
 .user-info:hover {
-  background-color: #f5f7fa;
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 .username {
   font-size: 14px;
-  color: #303133;
+  color: #fff;
 }
 
 /* 内容区域 */
 .content {
   flex: 1;
-  background-color: #f0f2f5;
+  background-color: var(--bg-color);
   overflow-y: auto;
-  padding: 20px;
+  padding: var(--content-padding);
+}
+
+/* 底部 */
+.footer {
+  height: var(--footer-height);
+  background-color: #f5f7fa;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.footer-divider {
+  color: var(--border-color);
 }
 
 /* 移动端适配 */
@@ -441,11 +520,15 @@ onUnmounted(() => {
 
   .sidebar.collapsed {
     transform: translateX(-100%);
-    width: 240px;
+    width: var(--sidebar-width);
   }
 
   .header {
     padding: 0 12px;
+  }
+
+  .header-title span {
+    display: none;
   }
 
   .username {

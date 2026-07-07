@@ -46,6 +46,43 @@
         </el-form-item>
       </el-form>
     </div>
+
+    <!-- 修改密码对话框（替代 ElMessageBox.prompt，支持密码显示切换） -->
+    <el-dialog
+      v-model="changePasswordDialogVisible"
+      :title="changePasswordTitle"
+      width="420px"
+      :close-on-click-modal="false"
+      :show-close="false"
+    >
+      <el-form
+        ref="changePasswordFormRef"
+        :model="changePasswordForm"
+        :rules="changePasswordRules"
+        label-width="100px"
+      >
+        <el-form-item label="新密码" prop="newPassword">
+          <el-input
+            v-model="changePasswordForm.newPassword"
+            type="password"
+            show-password
+            placeholder="6位以上，含字母和数字"
+          />
+        </el-form-item>
+        <el-form-item label="确认密码" prop="confirmPassword">
+          <el-input
+            v-model="changePasswordForm.confirmPassword"
+            type="password"
+            show-password
+            placeholder="请再次输入新密码"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="handleCancelChangePassword">退出登录</el-button>
+        <el-button type="primary" @click="handleSubmitChangePassword">确认修改</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -63,6 +100,7 @@ const userStore = useUserStore()
 
 // 表单引用
 const loginFormRef = ref<FormInstance>()
+const changePasswordFormRef = ref<FormInstance>()
 
 // 加载状态
 const loading = ref(false)
@@ -72,6 +110,37 @@ const loginForm = reactive({
   username: '',
   password: ''
 })
+
+// 修改密码对话框
+const changePasswordDialogVisible = ref(false)
+const changePasswordTitle = ref('修改密码')
+const changePasswordForm = reactive({
+  newPassword: '',
+  confirmPassword: ''
+})
+const changePasswordRules = {
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' },
+    { pattern: /^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z\d!@#$%^&*]{6,}$/, message: '需包含字母和数字', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请确认密码', trigger: 'blur' },
+    {
+      validator: (_rule: any, value: string, callback: any) => {
+        if (value !== changePasswordForm.newPassword) {
+          callback(new Error('两次输入的密码不一致'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ]
+}
+
+// 修改密码的 resolve/reject 控制
+let changePasswordResolve: ((value: boolean) => void) | null = null
 
 // 表单验证规则
 const rules = {
@@ -85,66 +154,41 @@ const rules = {
 }
 
 /**
+ * 打开修改密码对话框（支持密码显示切换）
+ */
+const openChangePasswordDialog = (title: string = '修改密码'): Promise<boolean> => {
+  changePasswordTitle.value = title
+  changePasswordForm.newPassword = ''
+  changePasswordForm.confirmPassword = ''
+  changePasswordDialogVisible.value = true
+  return new Promise((resolve) => {
+    changePasswordResolve = resolve
+  })
+}
+
+/**
  * 处理强制修改密码（首次登录）
- * 弹出对话框要求设置新密码
  */
 const handleMustChangePassword = async (): Promise<boolean> => {
+  const result = await openChangePasswordDialog('首次登录 - 修改密码')
+  if (!result) return false
+
+  // 调用修改密码接口（此时旧密码就是登录时用的密码）
   try {
-    const { value: newPassword } = await ElMessageBox.prompt(
-      '首次登录需要修改密码。请输入新密码（8-20位，含大小写字母、数字和特殊字符）',
-      '修改密码',
-      {
-        confirmButtonText: '确认修改',
-        cancelButtonText: '退出登录',
-        inputType: 'password',
-        inputPlaceholder: '请输入新密码',
-        distinguishCancelAndClose: true
-      }
-    )
-
-    if (!newPassword) {
-      ElMessage.warning('密码不能为空')
-      return false
-    }
-
-    // 确认密码
-    const { value: confirmPassword } = await ElMessageBox.prompt(
-      '请再次输入新密码以确认',
-      '确认密码',
-      {
-        confirmButtonText: '确认',
-        cancelButtonText: '退出登录',
-        inputType: 'password',
-        inputPlaceholder: '请再次输入新密码',
-        distinguishCancelAndClose: true
-      }
-    )
-
-    if (newPassword !== confirmPassword) {
-      ElMessage.error('两次输入的密码不一致')
-      return false
-    }
-
-    // 调用修改密码接口（此时旧密码就是登录时用的密码）
     await changePassword({
       oldPassword: loginForm.password,
-      newPassword: newPassword
+      newPassword: changePasswordForm.newPassword
     })
-
     ElMessage.success('密码修改成功')
     return true
   } catch (err: any) {
-    // 用户点了"退出登录"或关闭对话框
-    if (err === 'cancel' || err?.action === 'cancel') {
-      ElMessage.info('请修改密码后登录')
-    }
+    ElMessage.error(err?.message || '密码修改失败')
     return false
   }
 }
 
 /**
  * 处理密码过期提醒
- * 弹出提示框建议修改密码，用户可选择继续或去修改
  */
 const handlePasswordExpired = async (): Promise<boolean> => {
   try {
@@ -158,21 +202,45 @@ const handlePasswordExpired = async (): Promise<boolean> => {
         distinguishCancelAndClose: true
       }
     )
-    // 用户点击"去修改" → 弹出修改密码对话框
     return await handleMustChangePassword()
   } catch (err: any) {
-    // 用户点击"继续使用" → 放行
     if (err === 'cancel' || err?.action === 'cancel') {
       return true
     }
-    // 用户关闭对话框
     return false
   }
 }
 
+/**
+ * 取消修改密码（退出登录）
+ */
+const handleCancelChangePassword = () => {
+  changePasswordDialogVisible.value = false
+  ElMessage.info('请修改密码后登录')
+  if (changePasswordResolve) {
+    changePasswordResolve(false)
+    changePasswordResolve = null
+  }
+}
+
+/**
+ * 提交修改密码
+ */
+const handleSubmitChangePassword = async () => {
+  if (!changePasswordFormRef.value) return
+  await changePasswordFormRef.value.validate((valid) => {
+    if (valid) {
+      changePasswordDialogVisible.value = false
+      if (changePasswordResolve) {
+        changePasswordResolve(true)
+        changePasswordResolve = null
+      }
+    }
+  })
+}
+
 // 登录处理
 const handleLogin = async () => {
-  // 验证表单
   if (!loginFormRef.value) return
   
   await loginFormRef.value.validate(async (valid) => {
@@ -193,7 +261,6 @@ const handleLogin = async () => {
       if (response.must_change_password) {
         const changed = await handleMustChangePassword()
         if (!changed) {
-          // 用户取消修改密码，清除登录状态
           userStore.clearAuth()
           loading.value = false
           return
@@ -228,7 +295,7 @@ const handleLogin = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0085CC 0%, #1B83C6 50%, #0a5a8f 100%);
   padding: 20px;
 }
 

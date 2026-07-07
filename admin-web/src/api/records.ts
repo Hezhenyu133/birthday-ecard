@@ -59,3 +59,15 @@ export const testSend = (employeeId: number) => {
 export const deleteRecord = (id: number) => {
   return request.delete(`/records/${id}`)
 }
+
+// 月度统计
+export interface MonthlyStatItem {
+  month: string
+  total: number
+  success: number
+  failed: number
+}
+
+export const getMonthlyStats = (): Promise<{ monthly: MonthlyStatItem[] }> => {
+  return request.get('/records/monthly-stats')
+}

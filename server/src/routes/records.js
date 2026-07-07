@@ -1,5 +1,5 @@
 import express from 'express';
-import { Op } from 'sequelize';
+import { Op, fn, col, literal } from 'sequelize';
 import { success, error } from '../utils/response.js';
 import { SendRecord, Employee, Template } from '../models/index.js';
 import { authMiddleware } from '../middlewares/auth.js';
@@ -79,6 +79,39 @@ router.get('/stats', async (req, res) => {
       failed: failedCount,
       success_rate: total ? parseFloat(((successCount / total) * 100).toFixed(2)) : 0
     });
+  } catch (err) {
+    error(res, err.message);
+  }
+});
+
+// 获取近12个月发送统计（按月份分组）
+router.get('/monthly-stats', async (req, res) => {
+  try {
+    const monthlyRaw = await SendRecord.findAll({
+      attributes: [
+        [fn('DATE_FORMAT', col('send_time'), '%Y-%m'), 'month'],
+        [fn('COUNT', '*'), 'total'],
+        [fn('SUM', literal("CASE WHEN send_status = 'success' THEN 1 ELSE 0 END")), 'success'],
+        [fn('SUM', literal("CASE WHEN send_status = 'failed' THEN 1 ELSE 0 END")), 'failed']
+      ],
+      where: {
+        send_time: {
+          [Op.gte]: literal('DATE_SUB(CURDATE(), INTERVAL 12 MONTH)')
+        }
+      },
+      group: ['month'],
+      order: [['month', 'ASC']],
+      raw: true
+    });
+
+    const monthly = monthlyRaw.map(row => ({
+      month: row.month,
+      total: parseInt(row.total),
+      success: parseInt(row.success) || 0,
+      failed: parseInt(row.failed) || 0
+    }));
+
+    success(res, { monthly });
   } catch (err) {
     error(res, err.message);
   }

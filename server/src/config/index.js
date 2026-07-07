@@ -25,11 +25,11 @@ export const config = {
   cardsDir: process.env.CARDS_DIR || './generated-cards',
   uploadsDir: process.env.UPLOADS_DIR || './uploads',
   // 贺卡发送者名称（用于模板 {{sender}} 占位符）
-  senderName: process.env.SENDER_NAME || '公司工会',
+  senderName: process.env.SENDER_NAME || '信阳移动公司工会',
   // 公司名称（用于模板 {{company}} 占位符，默认与 senderName 相同）
-  companyName: process.env.COMPANY_NAME || process.env.SENDER_NAME || '公司工会',
+  companyName: process.env.COMPANY_NAME || process.env.SENDER_NAME || '信阳移动公司工会',
   // 公司 Logo URL（用于模板 {{logo_url}} 占位符）
-  logoUrl: process.env.LOGO_URL || '',
+  logoUrl: process.env.LOGO_URL || '/uploads/logo.svg',
   // 短信发送配置
   sms: {
     provider: smsProvider,
