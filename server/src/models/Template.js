@@ -15,8 +15,16 @@ const Template = sequelize.define('Template', {
     type: DataTypes.STRING(255)
   },
   employee_level: {
-    type: DataTypes.ENUM('management', 'manager', 'employee', 'all'),
-    defaultValue: 'all'
+    type: DataTypes.TEXT,
+    defaultValue: null,
+    get() {
+      const raw = this.getDataValue('employee_level');
+      if (!raw) return ['all'];
+      try { return JSON.parse(raw); } catch { return [raw]; }
+    },
+    set(val) {
+      this.setDataValue('employee_level', Array.isArray(val) ? JSON.stringify(val) : val);
+    }
   },
   page_count: {
     type: DataTypes.INTEGER,

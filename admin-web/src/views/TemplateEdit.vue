@@ -85,27 +85,18 @@
             </el-form-item>
 
             <el-form-item label="适用职级" prop="employee_level">
-              <el-select v-model="formData.employee_level" placeholder="请选择适用职级" style="width: 200px">
-                <el-option label="通用（所有职级）" value="all" />
+              <el-select v-model="formData.employee_level" multiple placeholder="请选择适用职级" style="width: 300px">
                 <el-option label="管理层" value="management" />
                 <el-option label="经理" value="manager" />
                 <el-option label="员工" value="employee" />
               </el-select>
+              <div class="hint-text">不选择则默认适用所有职级</div>
             </el-form-item>
 
             <el-form-item label="模板页数" prop="page_count">
               <el-select v-model="formData.page_count" placeholder="请选择页数" style="width: 200px">
                 <el-option label="4 页" :value="4" />
-                <el-option label="6 页" :value="6" />
-              </el-select>
-            </el-form-item>
-
-            <el-form-item label="模板风格" prop="template_type">
-              <el-select v-model="formData.template_type" placeholder="请选择模板风格（可选）" clearable style="width: 200px">
-                <el-option label="正式" value="official" />
-                <el-option label="节日" value="festive" />
-                <el-option label="优雅" value="elegant" />
-                <el-option label="现代" value="modern" />
+                <el-option label="7 页" :value="7" />
               </el-select>
             </el-form-item>
 
@@ -114,6 +105,7 @@
                 v-model="formData.default_blessing_id"
                 placeholder="请选择默认祝福语（可选）"
                 clearable
+                @change="handleBlessingChange"
                 @clear="handleClearBlessing"
               >
                 <el-option
@@ -128,24 +120,15 @@
 
             <el-divider content-position="left">模板内容</el-divider>
 
-            <!-- 使用纯文本编辑贺卡内容（管理员可通过占位符 {{name}} 等进行替换） -->
-            <el-form-item label="贺卡文本内容" prop="text_content">
-              <el-alert
-                v-if="isEdit && !templateHasMarkers"
-                title="该模板不支持文本编辑"
-                description="此模板没有可编辑区域标记。如需修改内容，请联系管理员在模板 HTML 中添加标记。占位符 {{name}}、{{department}}、{{blessing}} 等仍会在生成贺卡时自动替换。"
-                type="info"
-                :closable="false"
-                show-icon
-                style="margin-bottom: 12px"
-              />
+            <!-- 祝福语内容编辑 -->
+            <el-form-item label="祝福语内容" prop="blessing_content">
               <el-input
-                v-model="formData.text_content"
+                v-model="formData.blessing_content"
                 type="textarea"
-                :rows="8"
-                :placeholder="templateHasMarkers ? '在此输入贺卡文本内容，可使用 {{name}}、{{department}}、{{position}}、{{blessing}} 占位符' : '该模板不支持文本编辑'"
-                :disabled="isEdit && !templateHasMarkers"
+                :rows="4"
+                placeholder="输入祝福语文本，将替换模板中的 {{blessing}} 占位符。支持中文逗号断句显示。"
               />
+              <div class="hint-text">此文本会在生成贺卡时替换模板中的祝福语占位符。也可通过上方「默认祝福语」下拉框选择已有祝福语。</div>
             </el-form-item>
 
             <el-form-item>
@@ -183,7 +166,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { Back, View, Refresh, Expand } from '@element-plus/icons-vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { createTemplate, updateTemplate, getTemplateDetail, previewTemplate } from '@/api/templates'
-import { getBlessingList } from '@/api/blessings'
+import { getBlessingList, updateBlessing } from '@/api/blessings'
 import type { Template } from '@/api/templates'
 import type { Blessing } from '@/api/blessings'
 
@@ -207,17 +190,13 @@ const formData = reactive<Partial<Template>>({
   match_age_min: null,
   match_age_max: null,
   match_interests: '',
-  employee_level: 'all',
+  employee_level: [] as string[],
   page_count: 4,
   template_type: null,
   default_blessing_id: null,
-  // 后端仍使用 html_content 字段；前端管理员使用 text_content 编辑，提交时会注入到原始 HTML 模板中
   html_content: '',
-  text_content: ''
+  blessing_content: ''
 })
-
-// 保存原始 HTML 结构，编辑时仅替换内容区域
-const originalHtml = ref('')
 
 // 表单验证规则
 const rules = reactive<FormRules>({
@@ -237,125 +216,17 @@ const blessings = ref<Blessing[]>([])
 const showPreview = ref(false)
 const previewHtml = ref('')
 
-// 检查 HTML 模板是否包含可编辑标记
-const hasEditableMarkers = (html: string): boolean => {
-  if (!html) return false
-  return html.includes('<!-- editable-start -->') && html.includes('<!-- editable-end -->')
-}
-
-// 模板是否有可编辑标记
-const templateHasMarkers = ref(true)
-
-// 从 HTML 模板中提取可编辑区域的文本内容（<!-- editable-start --> 和 <!-- editable-end --> 之间）
-const extractEditableText = (html: string): string => {
-  if (!html) return ''
-  const startMarker = '<!-- editable-start -->'
-  const endMarker = '<!-- editable-end -->'
-  const startIdx = html.indexOf(startMarker)
-  const endIdx = html.indexOf(endMarker)
-  if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) return ''
-
-  const region = html.substring(startIdx + startMarker.length, endIdx)
-  // 提取标签内的文本内容，移除 HTML 标签
-  return region
-    .replace(/<[^>]*class="[^"]*"[^>]*>(.*?)<\/[^>]+>/gs, '$1')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .trim()
-}
-
-// 从可编辑区域提取包裹标签的名称和属性（保留原始 CSS 结构）
-const extractWrapperTag = (region: string): { tag: string; attrs: string } => {
-  const match = region.match(/<([a-zA-Z][a-zA-Z0-9]*)(\s[^>]*)>/)
-  if (match) {
-    return { tag: match[1], attrs: match[2] || '' }
-  }
-  return { tag: 'div', attrs: '' }
-}
-
-// 将编辑后的文本注入原始 HTML 模板的可编辑区域（保留 CSS/布局不变）
-const injectTextIntoTemplate = (text: string, html: string): string => {
-  if (!html) return ''
-
-  const startMarker = '<!-- editable-start -->'
-  const endMarker = '<!-- editable-end -->'
-  const startIdx = html.indexOf(startMarker)
-  const endIdx = html.indexOf(endMarker)
-
-  if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) {
-    // 没有标记，直接返回原始 HTML（不破坏模板）
-    return html
-  }
-
-  const before = html.substring(0, startIdx + startMarker.length)
-  const after = html.substring(endIdx)
-
-  // 提取原始可编辑区域的内容，以便保留包裹标签
-  const originalRegion = html.substring(startIdx + startMarker.length, endIdx).trim()
-  const wrapper = extractWrapperTag(originalRegion)
-
-  // 转义 HTML 特殊字符
-  const escaped = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-
-  // 将文本段落转换为 HTML（双换行分段，单换行用 br）
-  const paragraphs = escaped.split(/\n{2,}/).map(p => p.replace(/\n/g, '<br/>'))
-  const contentHtml = paragraphs.map(p => `<p>${p}</p>`).join('\n')
-
-  // 用原始包裹标签包裹新内容，保持 CSS 结构不变
-  return `${before}\n<${wrapper.tag}${wrapper.attrs}>\n${contentHtml}\n</${wrapper.tag}>\n${after}`
-}
-
-// 模拟模板内 formatBlessingText() 的逗号断句逻辑（v-html 不执行 <script>）
-const formatBlessingForPreview = (text: string): string => {
-  if (!text) return text
-  const parts = text.split(/[，；]/).map(s => s.trim()).filter(Boolean)
-  if (parts.length > 1) {
-    return parts.map(p =>
-      `<span class="comma-line" style="display:block">${p.replace(/[。]+$/, '')}</span>`
-    ).join('')
-  }
-  return text.replace(/[。]+$/, '')
-}
-
-// 刷新预览：优先使用纯文本编辑内容，其次回退到后端 html_content
+// 刷新预览
 const refreshPreview = async () => {
-  const hasText = !!formData.text_content
+  if (!isEdit.value || !route.params.id) return
 
-  if (!hasText && !formData.html_content) return
-
-  if (isEdit.value && route.params.id && !formData.text_content) {
-    try {
-      previewHtml.value = await previewTemplate(Number(route.params.id))
-      return
-    } catch (error) {
-      console.error('获取后端预览失败，使用本地占位符替换：', error)
-    }
+  try {
+    const html = await previewTemplate(Number(route.params.id))
+    previewHtml.value = html
+  } catch (error) {
+    console.error('获取后端预览失败：', error)
+    ElMessage.warning('预览加载失败')
   }
-
-  const source = formData.text_content || formData.html_content || ''
-  // 将编辑的文本注入原始模板，生成完整 HTML 用于预览
-  const rawHtml = formData.text_content && originalHtml.value
-    ? injectTextIntoTemplate(source, originalHtml.value)
-    : source
-
-  const selectedBlessing = blessings.value.find(b => b.id === formData.default_blessing_id)
-  const blessingText = selectedBlessing?.content || '祝您生日快乐，事业蒸蒸日上！'
-
-  previewHtml.value = rawHtml
-      .replace(/\{\{name\}\}/g, '张三')
-      .replace(/\{\{department\}\}/g, '技术部')
-      .replace(/\{\{position\}\}/g, '工程师')
-      .replace(/\{\{sender\}\}/g, '公司工会')
-      .replace(/\{\{blessing\}\}/g, formatBlessingForPreview(blessingText))
-      .replace(/\{\{year\}\}/g, new Date().getFullYear().toString())
 }
 
 // 切换预览
@@ -410,9 +281,6 @@ const loadTemplateDetail = async () => {
   try {
     const id = Number(route.params.id)
     const detail = await getTemplateDetail(id)
-    
-    originalHtml.value = detail.html_content || ''
-    templateHasMarkers.value = hasEditableMarkers(detail.html_content || '')
 
     Object.assign(formData, {
       name: detail.name,
@@ -421,10 +289,11 @@ const loadTemplateDetail = async () => {
       match_age_min: detail.match_age_min,
       match_age_max: detail.match_age_max,
       match_interests: detail.match_interests || '',
+      employee_level: Array.isArray(detail.employee_level) ? detail.employee_level.filter((l: string) => l !== 'all') : (detail.employee_level && detail.employee_level !== 'all' ? [detail.employee_level] : []),
+      page_count: detail.page_count || 4,
       default_blessing_id: detail.default_blessing_id ?? null,
       html_content: detail.html_content,
-      // 只提取可编辑区域的文本内容（标记之间的部分）
-      text_content: extractEditableText(detail.html_content || '')
+      blessing_content: detail.default_blessing?.content || ''
     })
   } catch (error) {
     console.error('加载模板详情失败：', error)
@@ -440,6 +309,16 @@ const handleClearBlessing = () => {
   formData.default_blessing_id = null
 }
 
+// 选择祝福语时，自动填充到祝福语内容编辑区
+const handleBlessingChange = (blessingId: number | null) => {
+  if (blessingId) {
+    const blessing = blessings.value.find(b => b.id === blessingId)
+    if (blessing) {
+      formData.blessing_content = blessing.content
+    }
+  }
+}
+
 // 提交表单
 const handleSubmit = async () => {
   if (!formRef.value) return
@@ -453,13 +332,20 @@ const handleSubmit = async () => {
       if (!formData.default_blessing_id) {
         (formData as any).default_blessing_id = null
       }
-      // 将编辑的文本注入原始 HTML 模板的可编辑区域（保留完整模板结构）
-      if (formData.text_content && originalHtml.value && templateHasMarkers.value) {
-        ;(formData as any).html_content = injectTextIntoTemplate(
-          formData.text_content,
-          originalHtml.value
-        )
+      // 如果祝福语内容有变化且有关联的祝福语，更新祝福语内容
+      if (formData.blessing_content && formData.default_blessing_id) {
+        const originalBlessing = blessings.value.find(b => b.id === formData.default_blessing_id)
+        if (!originalBlessing || originalBlessing.content !== formData.blessing_content) {
+          await updateBlessing(formData.default_blessing_id, { content: formData.blessing_content })
+        }
       }
+      // 如果没有选择祝福语但有输入内容，创建新祝福语并关联
+      if (formData.blessing_content && !formData.default_blessing_id) {
+        const { createBlessing } = await import('@/api/blessings')
+        const newBlessing = await createBlessing({ content: formData.blessing_content })
+        ;(formData as any).default_blessing_id = newBlessing.id
+      }
+
       if (isEdit.value) {
         await updateTemplate(Number(route.params.id), formData as Template)
         ElMessage.success('修改成功')
@@ -502,6 +388,13 @@ onMounted(() => {
 <style scoped>
 .template-edit-container {
   padding: 0;
+}
+
+.hint-text {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.5;
 }
 
 .card-header {

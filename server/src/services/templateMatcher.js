@@ -16,12 +16,14 @@ const getTargetPageCount = (employeeLevel) => {
 
 /**
  * 判断模板的 employee_level 是否匹配员工的 level
- * 向后兼容：模板 employee_level 为 null 或 'all' 时匹配所有等级
+ * employee_level 现在是数组（如 ['management', 'manager']）
+ * 包含 'all' 或 null 时匹配所有等级
  */
 const matchLevel = (template, employeeLevel) => {
   if (!employeeLevel) return true;
-  if (!template.employee_level || template.employee_level === 'all') return true;
-  return template.employee_level === employeeLevel;
+  const levels = template.employee_level; // getter 返回数组
+  if (!levels || levels.includes('all')) return true;
+  return levels.includes(employeeLevel);
 };
 
 /**

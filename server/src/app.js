@@ -44,8 +44,8 @@ async function ensureDirectories() {
 
 // 中间件
 app.use(cors());
-app.use(express.json({ limit: '5mb' }));
-app.use(express.urlencoded({ extended: true, limit: '5mb' }));
+app.use(express.json({ limit: '30mb' }));
+app.use(express.urlencoded({ extended: true, limit: '30mb' }));
 app.use(express.text({ type: 'application/xml', limit: '1mb' })); // CSP回调XML解析
 
 // 静态文件服务（uploads 目录下的 logo 等资源）

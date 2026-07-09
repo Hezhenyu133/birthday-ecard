@@ -30,11 +30,22 @@ const BASE_DIR = path.join(__dirname, 'src', 'data');
  */
 async function convertToStandalone(templateDir) {
   const dirPath = path.join(BASE_DIR, templateDir);
+
+  // 优先使用已生成的 template-standalone.html
+  const standalonePath = path.join(dirPath, 'template-standalone.html');
+  try {
+    const html = await fs.readFile(standalonePath, 'utf-8');
+    console.log(`   ✓ 使用 template-standalone.html`);
+    return html;
+  } catch {
+    console.log(`   template-standalone.html 不存在，回退到组合模式`);
+  }
+
+  // 回退：组合 index.html + style.css + script.js
   const indexPath = path.join(dirPath, 'index.html');
   const cssPath = path.join(dirPath, 'style.css');
   const jsPath = path.join(dirPath, 'script.js');
 
-  // 读取文件
   let html = await fs.readFile(indexPath, 'utf-8');
   const css = await fs.readFile(cssPath, 'utf-8');
   const js = await fs.readFile(jsPath, 'utf-8');
@@ -51,10 +62,9 @@ async function convertToStandalone(templateDir) {
     `<script>\n${js}\n</script>`
   );
 
-  // 转换图片为 base64
-  const imgRegex = /src=["'](assets\/[^"']+)["']/g;
-  let match;
-  while ((match = imgRegex.exec(html)) !== null) {
+  // 逐个替换图片为 base64（避免全局正则 lastIndex 问题）
+  const imgMatches = [...html.matchAll(/src=["'](assets\/[^"']+)["']/g)];
+  for (const match of imgMatches) {
     const imgPath = path.join(dirPath, match[1]);
     try {
       const imgData = await fs.readFile(imgPath);
@@ -69,16 +79,14 @@ async function convertToStandalone(templateDir) {
       };
       const mimeType = mimeTypes[ext] || 'image/png';
       const base64 = imgData.toString('base64');
+      // 只替换第一次出现（因为每次 base64 不同）
       html = html.replace(match[0], `src="data:${mimeType};base64,${base64}"`);
     } catch (err) {
       console.warn(`   无法读取图片: ${imgPath}`);
     }
   }
 
-  // 音乐文件不内联为 base64，保留 {{music_url}} 占位符和 ../music/music.mp3 路径
-  // cardGenerator.js 会在生成贺卡时替换为 /music/music.mp3（由静态路由提供服务）
   console.log(`   ✓ 保留音乐占位符（由贺卡生成服务替换）`);
-
   return html;
 }
 
@@ -107,35 +115,35 @@ function inferMetadata(dirName) {
     'birthday-card-13-employee-warm-image': {
       name: '温馨员工版',
       description: '温暖色调的员工生日贺卡',
-      employee_level: 'employee',
+      employee_level: ['employee'],
       match_gender: 'all',
       page_count: 4
     },
     'birthday-card-14-executive-night-image': {
       name: '夜景高管版',
       description: '夜景风格的高管生日贺卡',
-      employee_level: 'management',
+      employee_level: ['all'],
       match_gender: 'all',
       page_count: 4
     },
     'birthday-card-15-executive-private-banquet': {
       name: '私宴高管版',
       description: '私宴风格的高管生日贺卡',
-      employee_level: 'management',
+      employee_level: ['management', 'manager'],
       match_gender: 'all',
       page_count: 7
     },
     'birthday-card-16-executive-honor-gallery': {
       name: '荣誉画廊高管版',
       description: '荣誉画廊风格的高管生日贺卡',
-      employee_level: 'management',
+      employee_level: ['management', 'manager'],
       match_gender: 'all',
       page_count: 7
     },
     'birthday-card-17-executive-time-archive': {
       name: '时光档案高管版',
       description: '时光档案风格的高管生日贺卡',
-      employee_level: 'management',
+      employee_level: ['management', 'manager'],
       match_gender: 'all',
       page_count: 7
     }
@@ -144,7 +152,7 @@ function inferMetadata(dirName) {
   return metadata[dirName] || {
     name: dirName,
     description: '贺卡模板',
-    employee_level: 'all',
+    employee_level: ['all'],
     match_gender: 'all',
     page_count: 4
   };

@@ -10,7 +10,7 @@ export interface Template {
   match_age_min?: number | null
   match_age_max?: number | null
   match_interests?: string | null
-  employee_level?: 'management' | 'manager' | 'employee' | 'all' | null
+  employee_level?: string[] | string | null
   page_count?: number | null
   template_type?: 'official' | 'festive' | 'elegant' | 'modern' | null
   html_content: string

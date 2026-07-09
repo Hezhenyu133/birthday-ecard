@@ -323,7 +323,7 @@ function showScreen(name) {
     scrollHint.style.transition = "opacity 0.4s ease";
   }
 
-  if (name !== "cover") tryPlayMusic();
+  tryPlayMusic();
   if (name === "final") startFinale();
   else stopFinale();
 }

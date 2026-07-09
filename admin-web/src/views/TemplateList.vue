@@ -47,6 +47,12 @@
                 <el-tag size="small" type="info">
                   {{ getGenderText(template.match_gender) }}
                 </el-tag>
+                <el-tag size="small" :type="template.employee_level === 'employee' ? 'warning' : (template.employee_level === 'management' || template.employee_level === 'manager' ? 'danger' : 'info')">
+                  {{ getLevelText(template.employee_level) }}
+                </el-tag>
+                <el-tag v-if="template.page_count" size="small" type="success">
+                  {{ template.page_count }}页
+                </el-tag>
                 <el-tag v-if="template.match_age_min || template.match_age_max" size="small">
                   {{ template.match_age_min || '-' }}-{{ template.match_age_max || '-' }}岁
                 </el-tag>
@@ -103,6 +109,17 @@ const getGenderText = (gender?: string) => {
     all: '不限'
   }
   return genderMap[gender || 'all'] || '不限'
+}
+
+// 获取职级文字
+const getLevelText = (level?: string[] | string | null) => {
+  if (Array.isArray(level)) {
+    if (level.length === 0 || level.includes('all')) return '通用'
+    const levelMap: Record<string, string> = { management: '管理层', manager: '经理', employee: '员工' }
+    return level.map(l => levelMap[l] || l).join('/')
+  }
+  const levelMap: Record<string, string> = { management: '管理层', manager: '经理', employee: '员工', all: '通用' }
+  return levelMap[level || 'all'] || '通用'
 }
 
 // 加载模板列表

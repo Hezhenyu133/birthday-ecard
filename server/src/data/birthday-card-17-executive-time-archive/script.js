@@ -1,19 +1,20 @@
-const screenOrder = ["cover", "name", "imprint", "compass", "wish", "message", "final"];
-const paletteByScreen = {
+const bgMusic = "{{music_url}}";
+const localMusic = "../music/music.mp3";
+
+const screenOrder = ["cover", "name", "imprint", "compass", "wish", "signoff", "final"];
+const palettes = {
   cover: ["#efe5d5", "#86aaa2", "#bf8a58", "#d9c8ae"],
   name: ["#f6ead9", "#acc9c1", "#b77c4d", "#ffffff"],
   imprint: ["#e5d8c5", "#8fb3aa", "#c79a64", "#f7f0e6"],
   compass: ["#f0dec3", "#6f9f9a", "#bb8652", "#d8e8e1"],
   wish: ["#e8f0e8", "#87aa9f", "#c49262", "#f4ead9"],
-  message: ["#f4eadc", "#9cbab1", "#bd8552", "#ffffff"],
+  signoff: ["#f4eadc", "#9cbab1", "#bd8552", "#ffffff"],
   final: ["#fff2dc", "#a7c8bd", "#c98e56", "#f8faf4"]
 };
 
-const app = document.querySelector(".card-app");
 const canvas = document.getElementById("fxCanvas");
 const ctx = canvas.getContext("2d");
 const screens = [...document.querySelectorAll(".screen")];
-const segments = [...document.querySelectorAll(".progress-segment")];
 const musicToggle = document.querySelector(".music-toggle");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -21,18 +22,25 @@ let width = 0;
 let height = 0;
 let dpr = 1;
 let activeScreen = "cover";
+let audio = null;
 let particles = [];
 let lightLines = [];
-let audio = null;
 let touchStartY = 0;
 let wheelLocked = false;
+
+// ===== 自动播放状态 =====
+let autoPlayTimer = null;
+const totalPages = 7;
+const totalDuration = 26000;
+const autoPlayInterval = totalDuration / totalPages;
+let isAutoPlaying = false;
 
 function random(min, max) {
   return min + Math.random() * (max - min);
 }
 
-function palette() {
-  return paletteByScreen[activeScreen] || paletteByScreen.cover;
+function paletteForScreen() {
+  return palettes[activeScreen] || palettes.cover;
 }
 
 function resizeCanvas() {
@@ -47,7 +55,7 @@ function resizeCanvas() {
 }
 
 function makeParticle(fromTop = false) {
-  const colors = palette();
+  const colors = paletteForScreen();
   return {
     x: random(0, width),
     y: fromTop ? random(-80, -12) : random(0, height),
@@ -60,7 +68,7 @@ function makeParticle(fromTop = false) {
 }
 
 function makeLine(fromSide = false) {
-  const colors = palette();
+  const colors = paletteForScreen();
   return {
     x: fromSide ? random(-100, 0) : random(0, width),
     y: random(height * 0.08, height * 0.9),
@@ -81,7 +89,8 @@ function updateMusicButton() {
 }
 
 function setupMusic() {
-  audio = new Audio("assets/music.mp3");
+  const source = bgMusic && !bgMusic.includes("{{") ? bgMusic : localMusic;
+  audio = new Audio(source);
   audio.loop = true;
   audio.preload = "auto";
   updateMusicButton();
@@ -105,31 +114,16 @@ async function tryPlayMusic() {
   updateMusicButton();
 }
 
-function updateProgress() {
-  segments.forEach((segment) => {
-    segment.classList.toggle("is-active", segment.dataset.jump === activeScreen);
-  });
-}
-
 function showScreen(name) {
-  const currentIndex = screenOrder.indexOf(activeScreen);
-  const nextIndex = screenOrder.indexOf(name);
-  if (nextIndex < 0 || name === activeScreen) return;
-
-  app.dataset.direction = nextIndex > currentIndex ? "next" : "prev";
   activeScreen = name;
-
   screens.forEach((screen) => {
     screen.classList.toggle("active", screen.dataset.screen === name);
   });
-
-  updateProgress();
   resetEffects();
-
-  if (name !== "cover") tryPlayMusic();
+  tryPlayMusic();
 }
 
-function moveScreen(direction) {
+function nextScreen(direction = 1) {
   const currentIndex = screenOrder.indexOf(activeScreen);
   const nextIndex = Math.max(0, Math.min(screenOrder.length - 1, currentIndex + direction));
   if (nextIndex !== currentIndex) showScreen(screenOrder[nextIndex]);
@@ -161,7 +155,7 @@ function drawLine(line) {
 
 function drawFinalHalo(time) {
   if (activeScreen !== "final" || reduceMotion) return;
-  const colors = palette();
+  const colors = paletteForScreen();
   const cx = width * 0.5;
   const cy = height * 0.35;
   ctx.save();
@@ -201,13 +195,31 @@ function tick(time) {
   requestAnimationFrame(tick);
 }
 
-document.querySelectorAll("[data-next]").forEach((button) => {
-  button.addEventListener("click", () => showScreen(button.dataset.next));
-});
+// 自动播放启动
+function startAutoPlaySequence() {
+  if (isAutoPlaying) return;
+  isAutoPlaying = true;
 
-segments.forEach((segment) => {
-  segment.addEventListener("click", () => showScreen(segment.dataset.jump));
-});
+  autoPlayTimer = setInterval(() => {
+    const currentIndex = screenOrder.indexOf(activeScreen);
+    if (currentIndex < screenOrder.length - 1) {
+      nextScreen(1);
+    } else {
+      stopAutoPlay();
+    }
+  }, autoPlayInterval);
+}
+
+function stopAutoPlay() {
+  if (autoPlayTimer) {
+    clearInterval(autoPlayTimer);
+    autoPlayTimer = null;
+  }
+  isAutoPlaying = false;
+}
+
+// 页面加载后自动播放
+setTimeout(startAutoPlaySequence, 500);
 
 window.addEventListener("resize", () => {
   resizeCanvas();
@@ -220,22 +232,59 @@ document.addEventListener("touchstart", (event) => {
 
 document.addEventListener("touchend", (event) => {
   const diff = touchStartY - event.changedTouches[0].clientY;
-  if (Math.abs(diff) < 68) return;
-  moveScreen(diff > 0 ? 1 : -1);
+  if (Math.abs(diff) < 72) return;
+  stopAutoPlay();
+  if (diff > 0) nextScreen(1);
+  else nextScreen(-1);
 }, { passive: true });
 
 document.addEventListener("wheel", (event) => {
   if (wheelLocked || Math.abs(event.deltaY) < 48) return;
   wheelLocked = true;
-  moveScreen(event.deltaY > 0 ? 1 : -1);
+  stopAutoPlay();
+  nextScreen(event.deltaY > 0 ? 1 : -1);
   window.setTimeout(() => { wheelLocked = false; }, 760);
 }, { passive: true });
 
-document.addEventListener("keydown", (event) => {
-  if (event.key === "ArrowDown" || event.key === "PageDown") moveScreen(1);
-  if (event.key === "ArrowUp" || event.key === "PageUp") moveScreen(-1);
-});
+// ========================================================
+//  逗号断行：以逗号/分号为界换行，移除标点
+// ========================================================
+function formatBlessingText() {
+  var selectors = "h1, h2, h3, .hero-copy, .message-text, .signature-copy, "
+    + ".support-note, .lead, .meta-line, "
+    + ".copy-panel > p:not(.eyebrow):not(.progress-tag):not(.sig-company):not(.sig-date)";
 
+  document.querySelectorAll(selectors).forEach(function(el) {
+    if (el.dataset.formatted === "true") return;
+    if (el.querySelector("*")) return;
+
+    var text = el.textContent.trim();
+    if (!text) return;
+
+    var parts = text.split(/[，；]/).map(function(s) { return s.trim(); }).filter(Boolean);
+
+    if (parts.length > 1) {
+      el.textContent = "";
+      parts.forEach(function(part) {
+        var span = document.createElement("span");
+        span.className = "comma-line";
+        span.style.display = "block";
+        span.textContent = part.replace(/[。]+$/, "");
+        el.appendChild(span);
+      });
+      el.dataset.formatted = "true";
+    } else {
+      el.textContent = text.replace(/[。]+$/, "");
+      el.dataset.formatted = "true";
+    }
+  });
+}
+
+// ========================================================
+//  初始化
+// ========================================================
+document.addEventListener("DOMContentLoaded", formatBlessingText);
+formatBlessingText();
 resizeCanvas();
 resetEffects();
 setupMusic();

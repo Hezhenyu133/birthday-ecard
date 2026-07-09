@@ -204,11 +204,11 @@ export const recordVideo = async ({ personalizedHtml, recordConfig, outputDir, c
       document.documentElement.style.background = '#0e1716';
       document.body.style.background = '#0e1716';
       document.body.dataset.recording = '1';
-      
+
       // 停止自动播放
       if (typeof window.stopAutoPlay === 'function') window.stopAutoPlay();
       if (typeof window.isAutoPlaying !== 'undefined') window.isAutoPlaying = false;
-      
+
       // 覆盖自动播放函数防止重启
       if (typeof window.startAutoPlaySequence === 'function') {
         window.startAutoPlaySequence = function () {};
@@ -216,7 +216,7 @@ export const recordVideo = async ({ personalizedHtml, recordConfig, outputDir, c
       if (typeof window.startAutoPlay === 'function') {
         window.startAutoPlay = function () {};
       }
-      
+
       // 重置到第一屏
       if (typeof window.showScreen === 'function' && typeof window.screenOrder !== 'undefined' && window.screenOrder.length) {
         window.showScreen(window.screenOrder[0]);
@@ -262,7 +262,14 @@ export const recordVideo = async ({ personalizedHtml, recordConfig, outputDir, c
     if (!webmFiles.length) throw new Error('没有找到 Playwright 录制出来的 webm 文件');
     
     const webmStats = await Promise.all(webmFiles.map(f => fs.stat(f)));
-    const webmFile = webmFiles[webmStats.reduce((maxI, stat, i, arr) => stat.mtimeMs > arr[maxI].mtimeMs ? i : maxI, 0)];
+    const rawWebmFile = webmFiles[webmStats.reduce((maxI, stat, i, arr) => stat.mtimeMs > arr[maxI].mtimeMs ? i : maxI, 0)];
+
+    // 先剥离webm中可能存在的音频轨道，确保只有纯视频
+    // 这样无论模板Audio是否被录进webm，最终编码时都不会叠加模板音乐
+    const silentWebmFile = path.join(tempDir, 'silent.webm');
+    console.log('剥离webm音频轨道...');
+    run(FFMPEG, ['-y', '-i', rawWebmFile, '-c:v', 'copy', '-an', silentWebmFile]);
+    const webmFile = silentWebmFile;
     
     // 计算编码参数
     const durationSeconds = screenOrder.length * pageDuration + tailDuration;

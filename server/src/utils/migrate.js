@@ -158,6 +158,22 @@ const MIGRATIONS = [
       AND COLUMN_TYPE LIKE '%5g_video%'
     `,
     sql: "ALTER TABLE send_records MODIFY COLUMN send_type ENUM('sms', 'mms', '5g_video') DEFAULT 'sms'"
+  },
+
+  // ===== templates.employee_level 从 ENUM 改为 TEXT（支持多选 JSON 数组）=====
+  {
+    table: 'templates',
+    column: 'employee_level_text',
+    checkSql: `
+      SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_NAME = 'templates' AND COLUMN_NAME = 'employee_level'
+      AND DATA_TYPE = 'text'
+    `,
+    sql: [
+      "ALTER TABLE templates MODIFY COLUMN employee_level TEXT",
+      "UPDATE templates SET employee_level = '[\"all\"]' WHERE employee_level = 'all' OR employee_level IS NULL",
+      "UPDATE templates SET employee_level = CONCAT('[\"', employee_level, '\"]') WHERE employee_level NOT LIKE '[%' AND employee_level IS NOT NULL AND employee_level != ''"
+    ]
   }
 ];
 
@@ -176,7 +192,10 @@ const migrateDatabase = async () => {
       });
 
       if (!results) {
-        await sequelize.query(migration.sql);
+        const sqls = Array.isArray(migration.sql) ? migration.sql : [migration.sql];
+        for (const sql of sqls) {
+          await sequelize.query(sql);
+        }
         applied++;
         console.log(`[迁移] 已应用: ${migration.table} - ${migration.column}`);
       }

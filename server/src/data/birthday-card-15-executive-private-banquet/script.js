@@ -166,7 +166,7 @@ function showScreen(name) {
   });
   updateProgress();
   resetConfetti();
-  if (name !== "cover") tryPlayMusic();
+  tryPlayMusic();
   if (name === "final") startFinale();
   else stopFinale();
 }

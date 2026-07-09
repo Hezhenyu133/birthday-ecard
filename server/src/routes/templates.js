@@ -40,7 +40,7 @@ const sanitizeInput = (obj) => {
 router.get('/', async (req, res) => {
   try {
     const templates = await Template.findAll({
-      attributes: ['id', 'name', 'description', 'match_gender', 'match_age_min', 'match_age_max', 'default_blessing_id', 'is_active', 'created_at', 'preview_image'],
+      attributes: ['id', 'name', 'description', 'match_gender', 'match_age_min', 'match_age_max', 'default_blessing_id', 'is_active', 'created_at', 'preview_image', 'employee_level', 'page_count'],
       include: [{
         model: Blessing,
         as: 'default_blessing',
