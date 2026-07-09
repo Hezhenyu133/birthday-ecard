@@ -17,13 +17,32 @@ export default defineConfig({
     cors: true, // 允许跨域
     proxy: {
       '/api': {
-        target: 'http://localhost:3000', // 后端服务器地址
-        changeOrigin: true, // 允许跨域
-        secure: false // 如果是 https 接口，需要配置这个参数
-        // 注意：不要 rewrite，后端路由本身就带 /api 前缀
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false
       },
       '/uploads': {
-        target: 'http://localhost:3000', // 后端服务器（静态文件）
+        target: 'http://localhost:3000',
+        changeOrigin: true
+      },
+      '/template-previews': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
+      },
+      '/card': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
+      },
+      '/music': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
+      },
+      '/videos': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
+      },
+      '/logo': {
+        target: 'http://localhost:3000',
         changeOrigin: true
       }
     }

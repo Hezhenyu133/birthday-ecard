@@ -51,15 +51,12 @@ const readHeartbeat = async (filename) => {
 // ========== 发送服务心跳 ==========
 
 /**
- * 初始化发送服务心跳（启动时调用，仅在心跳文件不存在时写入）
- * 避免服务首次启动时因无心跳文件而显示为 unhealthy
+ * 初始化发送服务心跳（服务器启动时调用）
+ * 服务启动即代表发送服务可用，应刷新心跳时间戳
  */
 export const initSenderHeartbeat = async () => {
-  const existing = await readHeartbeat('sender.json');
-  if (!existing) {
-    await writeHeartbeat('sender.json');
-    console.log('[心跳] 发送服务初始心跳已写入');
-  }
+  await writeHeartbeat('sender.json');
+  console.log('[心跳] 发送服务心跳已初始化');
 };
 
 /**

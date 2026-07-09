@@ -1,37 +1,33 @@
-// 短信/彩信发送服务
-// 支持两种模式：mock（模拟发送，开发环境默认）和 carrier（对接运营商API）
-// 切换到真实运营商只需修改 .env 中的 SMS_PROVIDER 和相关认证参数
+// 短信/彩信/5G视信发送服务
+// 支持三种模式：mock（模拟发送）、carrier（通用运营商API）、csp（5G视信CSP V2.4.3）
+// 切换发送模式只需修改 .env 中的 SMS_PROVIDER
 
 import axios from 'axios';
+import fs from 'fs';
+import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config/index.js';
+import { generateCspAuth } from './cspAuthService.js';
+import { buildOutboundXml, buildOutboundXmlLarge } from './cspXmlBuilder.js';
+import { extractMessageIdFromXml, extractErrorCodeFromXml, extractErrorMsgFromXml } from '../utils/cspXmlParser.js';
 
 /**
- * 发送短信/彩信（主入口函数）
+ * 发送短信/彩信/5G视信（主入口函数）
  * 
  * 根据 SMS_PROVIDER 配置自动选择发送模式，内置重试机制。
  * 该函数永远不会抛出异常，所有错误都通过返回值中的 success/error 字段体现。
- * 
- * @param {string} phone - 接收方手机号
- * @param {string} cardUrl - 贺卡访问链接
- * @param {string} employeeName - 员工姓名（用于日志和短信内容）
- * @returns {Promise<{
- *   success: boolean,      // 是否发送成功
- *   messageId: string|null,// 运营商返回的消息ID（mock模式为模拟ID）
- *   provider: string,      // 使用的发送模式：'mock' 或 'carrier'
- *   retryCount: number,    // 实际重试次数
- *   error: string|null,    // 失败时的错误信息
- *   sentAt: Date           // 发送时间
- * }>}
  */
-export const sendSMS = async (phone, cardUrl, employeeName) => {
+export const sendSMS = async (phone, cardUrl, employeeName, options = {}) => {
+  const { videoPath = null } = options;
   const provider = config.sms.provider;
   const sentAt = new Date();
 
   try {
     if (provider === 'carrier') {
-      return await _sendWithRetry(() => _carrierSend(phone, cardUrl, employeeName));
+      return await _sendWithRetry(() => _carrierSend(phone, cardUrl, employeeName, { videoPath }));
+    } else if (provider === 'csp') {
+      return await _sendWithRetry(() => _cspSend(phone, cardUrl, employeeName, { videoPath }));
     } else {
-      return await _mockSend(phone, cardUrl, employeeName);
+      return await _mockSend(phone, cardUrl, employeeName, { videoPath });
     }
   } catch (error) {
     return {
@@ -46,17 +42,22 @@ export const sendSMS = async (phone, cardUrl, employeeName) => {
 };
 
 /**
- * 模拟短信发送 - 仅在控制台输出日志，不实际发送短信
- * 开发阶段使用此模式验证流程是否正常
+ * 模拟短信/彩信发送 - 仅在控制台输出日志，不实际发送
  */
-const _mockSend = async (phone, cardUrl, employeeName) => {
+const _mockSend = async (phone, cardUrl, employeeName, options = {}) => {
+  const { videoPath = null } = options;
   await new Promise(resolve => setTimeout(resolve, 100));
 
   const messageId = `mock_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const sendType = videoPath ? 'MMS' : 'SMS';
   
+  console.log(`[短信模拟] 类型: ${sendType}`);
   console.log(`[短信模拟] 收件人: ${phone}`);
   console.log(`[短信模拟] 员工: ${employeeName}`);
   console.log(`[短信模拟] 贺卡链接: ${cardUrl}`);
+  if (videoPath) {
+    console.log(`[短信模拟] 视频附件: ${videoPath}`);
+  }
   console.log(`[短信模拟] 消息ID: ${messageId}`);
 
   return {
@@ -65,44 +66,141 @@ const _mockSend = async (phone, cardUrl, employeeName) => {
     provider: 'mock',
     retryCount: 0,
     error: null,
-    sentAt: new Date()
+    sentAt: new Date(),
+    contributionId: null
   };
 };
 
 /**
- * 通过运营商API发送短信/彩信
- * 
- * 注意：当前为骨架实现，拿到运营商API文档后需要补充：
- * 1. 具体的请求URL路径
- * 2. 请求头格式（认证方式：Bearer Token / API Key / 签名等）
- * 3. 请求体格式（手机号、内容的字段名）
- * 4. 响应解析逻辑（成功/失败的判断条件和消息ID提取）
+ * 通过通用运营商API发送短信/彩信
  */
-const _carrierSend = async (phone, cardUrl, employeeName) => {
-  const { apiUrl, apiKey, senderId, timeout } = config.sms;
+const _carrierSend = async (phone, cardUrl, employeeName, options = {}) => {
+  const { videoPath = null } = options;
+  const { apiUrl, apiKey, timeout } = config.sms;
 
   if (!apiUrl) {
     throw new Error('SMS_API_URL 未配置，无法调用运营商接口');
   }
 
+  if (videoPath) {
+    return await _sendMms(phone, cardUrl, employeeName, videoPath);
+  } else {
+    return await _sendSms(phone, cardUrl, employeeName);
+  }
+};
+
+/**
+ * 通过5G视信CSP接口发送视频短信
+ * 遵循V2.4.3规范：双层SHA256鉴权 + XML请求体 + 模板化发送
+ */
+const _cspSend = async (phone, cardUrl, employeeName, options = {}) => {
+  const { videoPath = null } = options;
+  const { csp, timeout } = config.sms;
+
+  // 1. 参数校验
+  if (!csp.appid || !csp.password || !csp.chatbotURI) {
+    throw new Error('CSP 配置不完整（CSP_APPID/CSP_PASSWORD/CSP_CHATBOT_URI）');
+  }
+  if (!csp.videoTemplateId) {
+    throw new Error('CSP_VIDEO_TEMPLATE_ID 未配置，5G视信模板ID必填');
+  }
+
+  // 2. 视频大小检查（>5M不可发送）
+  let videoSize = 0;
+  if (videoPath) {
+    const stat = await fs.promises.stat(videoPath).catch(() => ({ size: 0 }));
+    videoSize = stat.size;
+    if (videoSize > 5 * 1024 * 1024) {
+      throw new Error(`视频文件过大(${(videoSize / 1024 / 1024).toFixed(1)}MB)，CSP规范上限5MB`);
+    }
+  }
+
+  // 3. 生成鉴权头
+  const { authorization, date } = generateCspAuth(csp.appid, csp.password);
+
+  // 4. 构建XML请求体
+  const contributionId = uuidv4();
+  const xmlParams = {
+    phone,
+    videoTemplateId: csp.videoTemplateId,
+    contributionId
+  };
+
+  const xmlBody = videoSize > 2 * 1024 * 1024
+    ? buildOutboundXmlLarge(xmlParams)
+    : buildOutboundXml(xmlParams);
+
+  // 5. 拼接请求地址
+  const endpoint = `${csp.serverRoot}/messaging/group/template/outbound/${encodeURIComponent(csp.chatbotURI)}/requests`;
+
+  console.log(`[5G视信] 发送到: ${phone}, 模板ID: ${csp.videoTemplateId}, 视频大小: ${videoSize ? (videoSize / 1024 / 1024).toFixed(1) + 'MB' : '无'}, 会话ID: ${contributionId}`);
+
+  // 6. 发送HTTPS POST请求
+  const response = await axios.post(endpoint, xmlBody, {
+    headers: {
+      'Authorization': authorization,
+      'Date': date,
+      'Content-Type': 'application/xml;charset=UTF-8',
+      'UserType': '10'
+    },
+    timeout,
+    // 确保不抛出非2xx错误（手动处理）
+    validateStatus: () => true
+  });
+
+  // 7. 解析响应
+  return _parseCspResponse(response, contributionId);
+};
+
+/**
+ * 解析CSP接口响应
+ */
+const _parseCspResponse = (response, contributionId) => {
+  const statusCode = response.status;
+  const data = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+
+  if (statusCode === 201 || statusCode === 200) {
+    const messageId = extractMessageIdFromXml(data) || contributionId;
+    console.log(`[5G视信] 发送成功, 消息ID: ${messageId}`);
+
+    return {
+      success: true,
+      messageId: String(messageId),
+      provider: 'csp',
+      retryCount: 0,
+      error: null,
+      sentAt: new Date(),
+      contributionId,
+      rawResponse: data
+    };
+  }
+
+  // 错误处理
+  const errorCode = extractErrorCodeFromXml(data) || String(statusCode);
+  const errorMsg = extractErrorMsgFromXml(data);
+  const err = new Error(`CSP错误[${errorCode}]: ${errorMsg}`);
+  err.isRateLimit = errorCode === '31008';
+  throw err;
+};
+
+/**
+ * 发送普通短信（carrier模式）
+ */
+const _sendSms = async (phone, cardUrl, employeeName) => {
+  const { apiUrl, apiKey, timeout } = config.sms;
   const messageContent = `亲爱的${employeeName}，祝您生日快乐！点击查看您的专属贺卡：${cardUrl}`;
 
-  // TODO: 根据运营商文档调整请求格式
-  const response = await axios.post(apiUrl, {
-    phone_number: phone,
-    content: messageContent,
-    sender_id: senderId,
-    type: 'sms'
+  const response = await axios.post(`${apiUrl}/api/v1/send_sms`, {
+    to: phone,
+    msg: messageContent
   }, {
     headers: {
       'Content-Type': 'application/json',
-      // TODO: 根据运营商文档调整认证方式
-      'Authorization': `Bearer ${apiKey}`,
+      'Authorization': `Bearer ${apiKey}`
     },
-    timeout,
+    timeout
   });
 
-  // TODO: 根据运营商文档调整响应解析逻辑
   const data = response.data;
   const isSuccess = data.code === 0 || data.code === '0' || data.status === 'success';
   
@@ -119,17 +217,62 @@ const _carrierSend = async (phone, cardUrl, employeeName) => {
     retryCount: 0,
     error: null,
     sentAt: new Date(),
+    contributionId: null,
+    rawResponse: data
+  };
+};
+
+/**
+ * 发送彩信（carrier模式，含视频附件）
+ */
+const _sendMms = async (phone, cardUrl, employeeName, videoPath) => {
+  const { apiUrl, apiKey, timeout } = config.sms;
+  const FormData = (await import('form-data')).default;
+  const formData = new FormData();
+
+  const messageContent = `亲爱的${employeeName}，祝您生日快乐！请查看您的专属生日视频贺卡：${cardUrl}`;
+
+  formData.append('to', phone);
+  formData.append('content', messageContent);
+  formData.append('attachment', fs.createReadStream(videoPath), {
+    filename: 'birthday-card.mp4',
+    contentType: 'video/mp4'
+  });
+
+  const response = await axios.post(`${apiUrl}/api/v1/send_mms`, formData, {
+    headers: {
+      ...formData.getHeaders(),
+      'Authorization': `Bearer ${apiKey}`
+    },
+    timeout: timeout * 3,
+    maxContentLength: 50 * 1024 * 1024,
+    maxBodyLength: 50 * 1024 * 1024
+  });
+
+  const data = response.data;
+  const isSuccess = data.code === 0 || data.code === '0' || data.status === 'success';
+  
+  if (!isSuccess) {
+    throw new Error(`运营商返回错误: ${data.message || JSON.stringify(data)}`);
+  }
+
+  const messageId = data.message_id || data.msgId || data.id || null;
+
+  return {
+    success: true,
+    messageId: String(messageId),
+    provider: 'carrier',
+    retryCount: 0,
+    error: null,
+    sentAt: new Date(),
+    contributionId: null,
     rawResponse: data
   };
 };
 
 /**
  * 带指数退避的重试包装器
- * 
- * 当运营商API调用失败时自动重试，采用指数退避策略：
- * 第1次重试等待 retryDelay * 1ms
- * 第2次重试等待 retryDelay * 2ms
- * 第3次重试等待 retryDelay * 4ms
+ * 限流错误(31008)使用更长退避时间
  */
 const _sendWithRetry = async (sendFn) => {
   const { maxRetries, retryDelay } = config.sms;
@@ -144,7 +287,9 @@ const _sendWithRetry = async (sendFn) => {
       lastError = error;
       
       if (attempt < maxRetries) {
-        const delay = retryDelay * Math.pow(2, attempt);
+        // 限流错误使用更长退避（10s * 2^attempt）
+        const baseDelay = error.isRateLimit ? 10000 : retryDelay;
+        const delay = baseDelay * Math.pow(2, attempt);
         console.warn(`[短信重试] 第 ${attempt + 1}/${maxRetries} 次重试，等待 ${delay}ms，原因: ${error.message}`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
@@ -156,7 +301,7 @@ const _sendWithRetry = async (sendFn) => {
   return {
     success: false,
     messageId: null,
-    provider: 'carrier',
+    provider: config.sms.provider,
     retryCount: maxRetries,
     error: lastError.message,
     sentAt: new Date()

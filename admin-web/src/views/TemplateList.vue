@@ -25,7 +25,14 @@
           >
             <!-- 模板预览图 -->
             <div class="template-preview">
-              <div class="preview-placeholder">
+              <img
+                v-if="template.preview_image"
+                :src="template.preview_image"
+                class="preview-cover"
+                alt="模板封面"
+                loading="lazy"
+              />
+              <div v-else class="preview-placeholder">
                 <el-icon :size="48"><Picture /></el-icon>
                 <div class="preview-text">模板预览</div>
               </div>
@@ -252,6 +259,13 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+}
+
+.preview-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
 }
 
 .preview-placeholder {

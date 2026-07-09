@@ -6,8 +6,8 @@
   --secondary-color: #1B83C6;     /* 辅助蓝 */
   --accent-color: #95C11F;        /* 绿色点缀 */
   --bg-color: #F5F7FA;            /* 页面背景 */
-  --header-height: 60px;          /* 顶部标题栏高度 */
-  --sidebar-width: 220px;         /* 侧边栏宽度 */
+  --header-height: 120px;         /* 顶部标题栏高度 */
+  --sidebar-width: 180px;         /* 侧边栏宽度 */
   --sidebar-collapsed-width: 64px;/* 侧边栏折叠宽度 */
   --content-padding: 24px;        /* 内容区边距 */
   --footer-height: 40px;          /* 底部栏高度 */

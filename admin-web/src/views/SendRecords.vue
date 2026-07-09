@@ -185,7 +185,8 @@
           v-if="previewCardUrl"
           :src="previewCardUrl"
           class="phone-screen"
-          sandbox="allow-scripts allow-same-origin"
+          sandbox="allow-scripts allow-same-origin allow-popups"
+          allow="autoplay; fullscreen"
           frameborder="0"
         ></iframe>
         <div class="phone-home-bar"></div>

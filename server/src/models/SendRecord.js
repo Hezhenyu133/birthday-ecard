@@ -77,6 +77,28 @@ const SendRecord = sequelize.define('SendRecord', {
   blessing_content: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  // --- 视频相关字段 ---
+  video_path: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+    comment: '视频文件路径（MMS发送时）'
+  },
+  send_type: {
+    type: DataTypes.ENUM('sms', 'mms', '5g_video'),
+    defaultValue: 'sms',
+    comment: '发送类型：sms=纯短信, mms=彩信含视频, 5g_video=5G视信'
+  },
+  // --- CSP 回调状态字段 ---
+  csp_status: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+    comment: 'CSP平台送达状态：DeliveredToNetwork/DeliveredToTerminal/DeliveryFailed等'
+  },
+  csp_contribution_id: {
+    type: DataTypes.STRING(200),
+    allowNull: true,
+    comment: 'CSP contributionID，用于关联回调状态'
   }
 }, {
   tableName: 'send_records',

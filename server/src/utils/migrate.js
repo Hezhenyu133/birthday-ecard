@@ -28,13 +28,13 @@ const MIGRATIONS = [
   },
   {
     table: 'templates',
-    column: 'html_content_mediumtext',
+    column: 'html_content_longtext',
     checkSql: `
       SELECT DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS
       WHERE TABLE_NAME = 'templates' AND COLUMN_NAME = 'html_content'
-      AND DATA_TYPE = 'mediumtext'
+      AND DATA_TYPE = 'longtext'
     `,
-    sql: "ALTER TABLE templates MODIFY COLUMN html_content MEDIUMTEXT NOT NULL"
+    sql: "ALTER TABLE templates MODIFY COLUMN html_content LONGTEXT NOT NULL"
   },
   {
     table: 'templates',
@@ -76,6 +76,13 @@ const MIGRATIONS = [
     sql: "ALTER TABLE blessings ADD COLUMN match_employee_level ENUM('management','manager','employee','all') DEFAULT 'all'"
   },
 
+  // ===== send_records 表 SMS 内容字段 =====
+  {
+    table: 'send_records',
+    column: 'sms_content',
+    sql: "ALTER TABLE send_records ADD COLUMN sms_content TEXT NULL"
+  },
+
   // ===== send_records 表冗余字段 =====
   {
     table: 'send_records',
@@ -86,6 +93,18 @@ const MIGRATIONS = [
     table: 'send_records',
     column: 'blessing_content',
     sql: "ALTER TABLE send_records ADD COLUMN blessing_content TEXT NULL"
+  },
+
+  // ===== send_records 表视频字段 =====
+  {
+    table: 'send_records',
+    column: 'video_path',
+    sql: "ALTER TABLE send_records ADD COLUMN video_path VARCHAR(500) NULL"
+  },
+  {
+    table: 'send_records',
+    column: 'send_type',
+    sql: "ALTER TABLE send_records ADD COLUMN send_type ENUM('sms', 'mms') DEFAULT 'sms'"
   },
 
   // ===== admins 表字段 =====
@@ -117,6 +136,28 @@ const MIGRATIONS = [
     table: 'admins',
     column: 'must_change_password',
     sql: "ALTER TABLE admins ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 1"
+  },
+
+  // ===== send_records 表 CSP 字段 =====
+  {
+    table: 'send_records',
+    column: 'csp_status',
+    sql: "ALTER TABLE send_records ADD COLUMN csp_status VARCHAR(50) NULL"
+  },
+  {
+    table: 'send_records',
+    column: 'csp_contribution_id',
+    sql: "ALTER TABLE send_records ADD COLUMN csp_contribution_id VARCHAR(200) NULL"
+  },
+  {
+    table: 'send_records',
+    column: 'send_type_5g_video',
+    checkSql: `
+      SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_NAME = 'send_records' AND COLUMN_NAME = 'send_type'
+      AND COLUMN_TYPE LIKE '%5g_video%'
+    `,
+    sql: "ALTER TABLE send_records MODIFY COLUMN send_type ENUM('sms', 'mms', '5g_video') DEFAULT 'sms'"
   }
 ];
 

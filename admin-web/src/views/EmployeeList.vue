@@ -29,10 +29,10 @@
               <el-icon><Plus /></el-icon>
               新增
             </el-button>
-            <el-button size="small" plain @click="handleEditDept" :disabled="!selectedDeptId">
-              编辑
+            <el-button size="small" plain @click="handleEditDept" :disabled="!selectedDeptId || selectedDeptId === -1">
+              <el-icon><Edit /></el-icon>
             </el-button>
-            <el-button size="small" type="danger" plain @click="handleDeleteDept" :disabled="!selectedDeptId">
+            <el-button size="small" type="danger" plain @click="handleDeleteDept" :disabled="!selectedDeptId || selectedDeptId === -1">
               删除
             </el-button>
           </div>
@@ -43,19 +43,33 @@
             size="small"
             style="margin-bottom: 8px"
           />
+          <div class="tree-expand-actions">
+            <el-button size="small" text @click="expandAll">展开全部</el-button>
+            <el-button size="small" text @click="collapseAll">折叠全部</el-button>
+          </div>
+          <!-- 全部节点 -->
+          <div
+            class="tree-all-node"
+            :class="{ 'is-active': !selectedDeptId }"
+            @click="handleAllClick"
+          >
+            <el-icon><Folder /></el-icon>
+            <span class="tree-all-label">全部员工</span>
+            <span class="tree-count" v-if="totalEmpCount > 0">({{ totalEmpCount }})</span>
+          </div>
           <el-tree
             ref="treeRef"
             :data="deptTree"
             :props="treeProps"
             node-key="id"
             highlight-current
-            default-expand-all
+            :default-expand-all="treeDefaultExpandAll"
             :filter-node-method="filterNode"
             @node-click="handleNodeClick"
           >
             <template #default="{ data }">
-              <span class="tree-node">
-                <span>{{ data.name }}</span>
+              <span class="tree-node" :class="{ 'is-inactive': !data.is_active }">
+                <span class="tree-label">{{ data.name }}</span>
                 <span class="tree-count" v-if="data._empCount !== undefined">({{ data._empCount }})</span>
               </span>
             </template>
@@ -100,10 +114,19 @@
           </el-form>
 
           <!-- 当前部门提示 -->
-          <div class="dept-breadcrumb" v-if="selectedDeptId">
-            <span>当前部门：</span>
-            <span class="dept-name">{{ selectedDeptName }}</span>
-            <span class="dept-hint">（含子部门）</span>
+          <div class="dept-breadcrumb" v-if="selectedDeptId !== null">
+            <span>当前位置：</span>
+            <el-breadcrumb separator="/">
+              <el-breadcrumb-item>
+                <span class="breadcrumb-link" @click="handleAllClick">全部员工</span>
+              </el-breadcrumb-item>
+              <el-breadcrumb-item v-for="(item, index) in breadcrumbPath" :key="index">
+                <span v-if="index === breadcrumbPath.length - 1" class="breadcrumb-current">{{ item }}</span>
+                <span v-else class="breadcrumb-link">{{ item }}</span>
+              </el-breadcrumb-item>
+            </el-breadcrumb>
+            <span class="dept-hint" v-if="selectedDeptId && selectedDeptId !== -1">（含子部门）</span>
+            <span class="dept-hint" v-if="selectedDeptId === -1">（组织架构，无直接员工）</span>
           </div>
 
           <!-- 数据表格 -->
@@ -196,7 +219,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { Plus, Upload, Search, Refresh, MagicStick } from '@element-plus/icons-vue'
+import { Plus, Upload, Search, Refresh, MagicStick, Folder } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { getEmployeeList, getTodayBirthdayEmployees, deleteEmployee, generateEmployeeCard, backfillTemplates } from '@/api/employees'
 import type { Employee, EmployeeQueryParams } from '@/api/employees'
@@ -215,9 +238,41 @@ const treeRef = ref()
 const deptTree = ref<Department[]>([])
 const treeFilterText = ref('')
 const treeProps = { children: 'children', label: 'name' }
+const treeDefaultExpandAll = ref(true)
 
 const selectedDeptId = ref<number | null>(null)
 const selectedDeptName = ref('')
+
+// 员工总数
+const totalEmpCount = computed(() => {
+  const count = (depts: Department[]): number => {
+    return depts.reduce((sum, dept) => {
+      return sum + (dept._empCount || 0) + (dept.children ? count(dept.children) : 0)
+    }, 0)
+  }
+  return count(deptTree.value)
+})
+
+// 面包屑路径
+const breadcrumbPath = computed(() => {
+  if (!selectedDeptId.value) return []
+  const path: string[] = []
+  const findPath = (depts: Department[], targetId: number, currentPath: string[]): boolean => {
+    for (const dept of depts) {
+      const newPath = [...currentPath, dept.name]
+      if (dept.id === targetId) {
+        path.push(...newPath)
+        return true
+      }
+      if (dept.children && findPath(dept.children, targetId, newPath)) {
+        return true
+      }
+    }
+    return false
+  }
+  findPath(deptTree.value, selectedDeptId.value, [])
+  return path
+})
 
 // id→name 映射
 const deptMap = new Map<number, string>()
@@ -258,9 +313,46 @@ const filterNode = (value: string, data: Department) => {
 
 // 点击树节点
 const handleNodeClick = (data: Department) => {
+  // 根部门（level=1）是组织名称，不是具体部门，右侧不显示员工
+  if (data.level === 1) {
+    selectedDeptId.value = -1  // 特殊标记：根部门选中但无员工
+    selectedDeptName.value = data.name
+    treeRef.value?.setCurrentKey(data.id)
+    handleSearch()
+    return
+  }
   selectedDeptId.value = data.id ?? null
   selectedDeptName.value = data.name
   handleSearch()
+}
+
+// 点击"全部"节点
+const handleAllClick = () => {
+  selectedDeptId.value = null
+  selectedDeptName.value = '全部员工'
+  treeRef.value?.setCurrentKey(null)
+  handleSearch()
+}
+
+// 展开全部
+const expandAll = () => {
+  treeDefaultExpandAll.value = true
+  // 重新加载树以应用展开状态
+  const data = deptTree.value
+  deptTree.value = []
+  nextTick(() => {
+    deptTree.value = data
+  })
+}
+
+// 折叠全部
+const collapseAll = () => {
+  treeDefaultExpandAll.value = false
+  const data = deptTree.value
+  deptTree.value = []
+  nextTick(() => {
+    deptTree.value = data
+  })
 }
 
 // 默认选中第一个顶级部门
@@ -430,7 +522,7 @@ const loadData = async () => {
 
     const params: EmployeeQueryParams = {
       keyword: searchForm.keyword,
-      departmentId: selectedDeptId.value ?? undefined,
+      departmentId: selectedDeptId.value && selectedDeptId.value !== -1 ? selectedDeptId.value : undefined,
       level: searchForm.level || undefined,
       page: pagination.page,
       pageSize: pagination.pageSize
@@ -579,11 +671,54 @@ onMounted(async () => {
   margin-bottom: 10px;
 }
 
+.tree-expand-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #ebeef5;
+  padding-bottom: 8px;
+}
+
+.tree-all-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.tree-all-node:hover {
+  background-color: #f5f7fa;
+}
+
+.tree-all-node.is-active {
+  background-color: #ecf5ff;
+  color: #409eff;
+  font-weight: 500;
+}
+
+.tree-all-label {
+  flex: 1;
+}
+
 .tree-node {
   display: flex;
   align-items: center;
   gap: 4px;
   font-size: 14px;
+}
+
+.tree-label {
+  flex: 1;
+}
+
+.tree-node.is-inactive {
+  color: #909399;
+  text-decoration: line-through;
 }
 
 .tree-count {

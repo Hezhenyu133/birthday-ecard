@@ -14,6 +14,10 @@ if (smsProvider === 'carrier' && !process.env.SMS_API_KEY) {
   console.warn('[短信警告] SMS_PROVIDER=carrier 但 SMS_API_KEY 未配置，发送将失败！');
 }
 
+if (smsProvider === 'csp' && (!process.env.CSP_APPID || !process.env.CSP_PASSWORD)) {
+  console.warn('[短信警告] SMS_PROVIDER=csp 但 CSP_APPID 或 CSP_PASSWORD 未配置，发送将失败！');
+}
+
 export const config = {
   port: process.env.PORT || 3000,
   nodeEnv,
@@ -39,7 +43,24 @@ export const config = {
     senderId: process.env.SMS_SENDER_ID || '',
     maxRetries: parseInt(process.env.SMS_MAX_RETRIES) || 3,
     retryDelay: parseInt(process.env.SMS_RETRY_DELAY) || 1000,
-    timeout: parseInt(process.env.SMS_TIMEOUT) || 10000
+    timeout: parseInt(process.env.SMS_TIMEOUT) || 10000,
+    // 5G视信 CSP 北向接口配置（SMS_PROVIDER=csp 时生效）
+    csp: {
+      appid: process.env.CSP_APPID || '',
+      password: process.env.CSP_PASSWORD || '',
+      serverRoot: process.env.CSP_SERVER_ROOT || 'https://api.5gcsp.mas.10086.cn/ocsp/developer',
+      fileServerRoot: process.env.CSP_FILE_SERVER_ROOT || 'https://api.5gcsp.mas.10086.cn/ocsp/fileservice',
+      chatbotURI: process.env.CSP_CHATBOT_URI || '',
+      videoTemplateId: process.env.CSP_VIDEO_TEMPLATE_ID || '',
+      callbackURL: process.env.CSP_CALLBACK_URL || ''
+    }
+  },
+  // 视频录制配置
+  video: {
+    enabled: process.env.VIDEO_ENABLED !== 'false',
+    outputDir: process.env.VIDEO_OUTPUT_DIR || './generated-videos',
+    tempDir: process.env.VIDEO_TEMP_DIR || './.video-temp',
+    retentionDays: parseInt(process.env.VIDEO_RETENTION_DAYS) || 7
   },
   // 操作日志保留天数（默认 60 天）
   logRetentionDays: parseInt(process.env.LOG_RETENTION_DAYS) || 60,

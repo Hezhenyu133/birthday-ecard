@@ -29,13 +29,14 @@ const sanitizeInput = (obj) => {
 };
 
 // 递归构建部门树
-const buildTree = (departments, parentId = null) => {
+const buildTree = (departments, parentId = null, empCountMap = {}) => {
   return departments
     .filter(d => d.parent_id === parentId)
     .sort((a, b) => a.sort_order - b.sort_order)
     .map(d => ({
       ...d.toJSON(),
-      children: buildTree(departments, d.id)
+      _empCount: empCountMap[d.id] || 0,
+      children: buildTree(departments, d.id, empCountMap)
     }));
 };
 
@@ -47,7 +48,20 @@ router.get('/tree', async (req, res) => {
       where.is_active = req.query.is_active === '1' || req.query.is_active === 'true';
     }
     const departments = await Department.findAll({ where, order: [['sort_order', 'ASC']] });
-    const tree = buildTree(departments);
+
+    // 统计每个部门的员工人数
+    const empCounts = await Employee.findAll({
+      attributes: ['department_id', [Employee.sequelize.fn('COUNT', '*'), 'count']],
+      group: ['department_id'],
+      raw: true
+    });
+    const empCountMap = {};
+    empCounts.forEach(item => {
+      empCountMap[item.department_id] = parseInt(item.count);
+    });
+
+    // 根部门 parent_id 为 null，以此为起点构建树
+    const tree = buildTree(departments, null, empCountMap);
     success(res, tree);
   } catch (err) {
     error(res, err.message);

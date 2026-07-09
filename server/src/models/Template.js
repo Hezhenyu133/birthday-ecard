@@ -39,7 +39,7 @@ const Template = sequelize.define('Template', {
     type: DataTypes.STRING(255)
   },
   html_content: {
-    type: DataTypes.TEXT('medium'),
+    type: DataTypes.TEXT('long'),
     allowNull: false
   },
   default_blessing_id: {
@@ -47,7 +47,7 @@ const Template = sequelize.define('Template', {
     allowNull: true
   },
   preview_image: {
-    type: DataTypes.STRING(255)
+    type: DataTypes.TEXT('long')
   },
   is_active: {
     type: DataTypes.BOOLEAN,

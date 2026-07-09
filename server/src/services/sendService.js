@@ -12,6 +12,8 @@ import { matchTemplate } from './templateMatcher.js';
 import { generateCard } from './cardGenerator.js';
 import { sendSMS } from './smsService.js';
 import { config } from '../config/index.js';
+import { getVideoConfig } from '../config/videoTemplates.js';
+import { recordVideo } from './videoRecorderService.js';
 
 /**
  * 构建短信内容文本
@@ -20,6 +22,9 @@ import { config } from '../config/index.js';
  * @returns {string} 短信正文
  */
 const buildSmsBody = (employeeName, cardUrl) => {
+  if (config.sms.provider === 'csp') {
+    return `[5G视信] 模板ID:${config.sms.csp.videoTemplateId} 贺卡链接:${cardUrl}`;
+  }
   return `亲爱的${employeeName}，祝您生日快乐！点击查看您的专属贺卡：${cardUrl}`;
 };
 
@@ -38,14 +43,16 @@ const delay = ms => new Promise(r => setTimeout(r, ms));
  * @param {string} phone - 手机号
  * @param {string} cardUrl - 贺卡链接
  * @param {string} employeeName - 员工姓名
+ * @param {object} options - 发送选项
+ * @param {string} options.videoPath - 视频文件路径（可选）
  * @returns {Promise<object>} SMS 发送结果
  */
-const sendSMSWithRetry = async (phone, cardUrl, employeeName) => {
+const sendSMSWithRetry = async (phone, cardUrl, employeeName, options = {}) => {
   const maxRetries = 3;
   let smsResult;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    smsResult = await sendSMS(phone, cardUrl, employeeName);
+    smsResult = await sendSMS(phone, cardUrl, employeeName, options);
 
     if (smsResult.success) {
       // 成功时记录在 sendService 层面的实际重试次数
@@ -138,15 +145,46 @@ export const sendBirthdayCard = async ({ employeeId, adminId = null, skipIfSentT
 
   const templateName = template.name;
   let cardResult = null;
+  let videoResult = null;
 
   try {
-    // 3. 生成贺卡
+    // 3. 先生成贺卡（不含视频）
     cardResult = await generateCard(template, employee);
 
-    // 4-6. 数据库操作使用事务保护
+    // 4. 检查是否需要录制视频
+    const videoConfig = getVideoConfig(templateName);
+    if (videoConfig && config.video.enabled) {
+      try {
+        console.log(`[视频录制] 开始为模板 ${templateName} 录制视频`);
+        // 读取生成的 HTML 文件
+        const htmlPath = path.join(config.cardsDir, `${cardResult.cardId}.html`);
+        const personalizedHtml = await fs.readFile(htmlPath, 'utf-8');
+
+        // 录制视频
+        videoResult = await recordVideo({
+          personalizedHtml,
+          recordConfig: videoConfig,
+          outputDir: config.video.outputDir,
+          cardId: cardResult.cardId
+        });
+        console.log(`[视频录制] 完成，视频路径: ${videoResult.videoPath}`);
+
+        // 5. 录制成功后，重新生成包含视频播放器的贺卡
+        if (videoResult) {
+          await fs.unlink(htmlPath).catch(() => {});
+          cardResult = await generateCard(template, employee, { videoPath: videoResult.videoPath });
+          console.log(`[视频嵌入] 已更新贺卡，嵌入视频播放器`);
+        }
+      } catch (recordErr) {
+        console.error(`[视频录制] 失败，降级为普通SMS: ${recordErr.message}`);
+        videoResult = null;
+      }
+    }
+
+    // 5-7. 数据库操作使用事务保护
     const smsBody = buildSmsBody(employeeName, cardResult.cardUrl);
     const record = await sequelize.transaction(async (t) => {
-      // 4. 创建待发送记录
+      // 5. 创建待发送记录
       const newRecord = await SendRecord.create({
         employee_id: employee.id,
         template_id: template.id,
@@ -155,20 +193,30 @@ export const sendBirthdayCard = async ({ employeeId, adminId = null, skipIfSentT
         send_status: 'pending',
         send_time: new Date(),
         admin_id: adminId,
-        sms_content: smsBody
+        sms_content: smsBody,
+        video_path: videoResult?.videoPath || null,
+        send_type: config.sms.provider === 'csp'
+          ? '5g_video'
+          : (videoResult ? 'mms' : 'sms')
       }, { transaction: t });
 
-      // 5. 发送短信（带重试机制）
-      const smsResult = await sendSMSWithRetry(employee.phone, cardResult.cardUrl, employeeName);
+      // 6. 发送短信/彩信（带重试机制）
+      const smsResult = await sendSMSWithRetry(
+        employee.phone,
+        cardResult.cardUrl,
+        employeeName,
+        { videoPath: videoResult?.videoPath || null }
+      );
 
-      // 6. 更新记录状态
+      // 7. 更新记录状态
       await newRecord.update({
         send_status: smsResult.success ? 'success' : 'failed',
         message_id: smsResult.messageId,
         sms_provider: smsResult.provider,
         retry_count: smsResult.retryCount,
         error_message: smsResult.error || null,
-        send_time: new Date()
+        send_time: new Date(),
+        csp_contribution_id: smsResult.contributionId || null
       }, { transaction: t });
 
       return { record: newRecord, smsResult };
@@ -186,6 +234,8 @@ export const sendBirthdayCard = async ({ employeeId, adminId = null, skipIfSentT
       smsContent: smsBody,
       employeeName,
       templateName,
+      videoPath: videoResult?.videoPath || null,
+      sendType: videoResult ? 'mms' : 'sms',
       error: record.smsResult.error || null
     };
   } catch (err) {

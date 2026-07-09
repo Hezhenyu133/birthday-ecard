@@ -20,6 +20,7 @@ import cardRoutes from './routes/card.js';
 import departmentRoutes from './routes/departments.js';
 import operationLogRoutes from './routes/operationLogs.js';
 import monitorRoutes from './routes/monitor.js';
+import cspCallbackRoutes from './routes/cspCallbacks.js';
 import initDefaultAdmin from './utils/initAdmin.js';
 import initDefaultTemplate from './utils/initDefaultTemplate.js';
 import { startBirthdayScheduler } from './services/scheduler.js';
@@ -31,7 +32,7 @@ const __dirname = path.dirname(__filename);
 
 // 确保必要的目录存在
 async function ensureDirectories() {
-  const dirs = [config.cardsDir, config.uploadsDir];
+  const dirs = [config.cardsDir, config.uploadsDir, config.video.outputDir];
   for (const dir of dirs) {
     try {
       await fs.mkdir(dir, { recursive: true });
@@ -45,9 +46,22 @@ async function ensureDirectories() {
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
+app.use(express.text({ type: 'application/xml', limit: '1mb' })); // CSP回调XML解析
 
 // 静态文件服务（uploads 目录下的 logo 等资源）
 app.use('/uploads', express.static(path.join(__dirname, '..', '..', 'uploads')));
+
+// 音乐文件静态服务（贺卡背景音乐）
+app.use('/music', express.static(path.join(__dirname, 'data', 'music')));
+
+// Logo 文件静态服务（贺卡左上角 logo）
+app.use('/logo', express.static(path.join(__dirname, 'data')));
+
+// 视频文件静态服务（录制的贺卡视频）
+app.use('/videos', express.static(path.join(__dirname, '..', 'generated-videos')));
+
+// 模板预览图静态服务
+app.use('/template-previews', express.static(path.join(__dirname, '..', 'uploads', 'template-previews')));
 
 // 健康检查（无需认证）
 app.get('/api/health', (req, res) => {
@@ -66,6 +80,9 @@ app.use('/api/monitor', monitorRoutes);
 
 // 贺卡访问路由（无需认证）
 app.use('/card', cardRoutes);
+
+// CSP平台回调路由（无需认证，平台推送无法携带JWT）
+app.use('/csp', cspCallbackRoutes);
 
 // 全局错误处理
 app.use(errorHandler);

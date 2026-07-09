@@ -11,74 +11,8 @@ const DATA_DIR = path.join(__dirname, '..', 'data');
 
 // 已知模板清单：提供详细的元数据（名称、描述、匹配规则）
 // 如果文件在此清单中，使用清单中的元数据；否则自动从文件名生成
+// 注意：旧模板已清理，此清单保留为空，新模板通过 import-new-templates.js 脚本导入
 const TEMPLATE_MANIFEST = [
-  // ── 4页全屏翻页贺卡模板 ──
-  {
-    file: '蛋糕.html',
-    name: '蛋糕',
-    description: '蛋糕主题贺卡，含蜡烛动画与许愿互动，温馨浪漫风格',
-    match_gender: 'all'
-  },
-  {
-    file: '粉色.html',
-    name: '粉色',
-    description: '粉色浪漫主题贺卡，含玫瑰花瓣飘落与蛋糕动画，适合女性员工',
-    match_gender: 'female'
-  },
-  {
-    file: '礼盒.html',
-    name: '礼盒',
-    description: '礼盒惊喜主题贺卡，含礼盒打开动画与彩带特效，喜庆大方',
-    match_gender: 'all'
-  },
-  {
-    file: '派对.html',
-    name: '派对',
-    description: '生日派对主题贺卡，含气球海洋与庆祝彩带动画，活泼欢快',
-    match_gender: 'all'
-  },
-  {
-    file: '星光.html',
-    name: '星光',
-    description: '星光璀璨主题贺卡，含大星星闪烁与夜空动画，简约温馨',
-    match_gender: 'all'
-  },
-  {
-    file: '红礼盒.html',
-    name: '红礼盒',
-    description: '红金喜庆礼盒主题贺卡，中国风浓郁，适合重要节日与长辈',
-    match_gender: 'all'
-  },
-  {
-    file: '寿桃.html',
-    name: '寿桃',
-    description: '寿桃祝寿主题贺卡，传统中式寿宴风格，适合年长员工',
-    match_gender: 'all'
-  },
-  {
-    file: '烟花.html',
-    name: '烟花',
-    description: '烟花绚烂主题贺卡，含全屏烟花绽放动画，华丽喜庆',
-    match_gender: 'all'
-  },
-  {
-    file: '通用1.html',
-    name: '通用1',
-    description: '简约通用贺卡（风格一），清新淡雅，含蛋糕与祝福文字',
-    match_gender: 'all'
-  },
-  {
-    file: '通用2.html',
-    name: '通用2',
-    description: '华丽通用贺卡（风格二），金色装饰与烟花背景，高端大气',
-    match_gender: 'all'
-  },
-  {
-    file: '通用3.html',
-    name: '通用3',
-    description: '高级质感贺卡（风格三），暗色调+金色点缀，含粒子特效与自动翻页，内嵌实景照片与背景音乐',
-    match_gender: 'all'
-  }
 ];
 
 // 旧名称 → 新名称的映射（一次性数据库迁移，保持记录 ID 不变）
