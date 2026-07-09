@@ -1,0 +1,11 @@
+{
+  "watch": ["src"],
+  "ext": "js,json",
+  "ignore": [
+    "heartbeats/*",
+    "generated-cards/*",
+    "generated-videos/*",
+    "uploads/*",
+    "node_modules/*"
+  ]
+}
